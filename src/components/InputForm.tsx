@@ -9,15 +9,24 @@ interface Props {
   onBack: () => void;
 }
 
+/** 숫자만 입력해도 yyyy/mm/dd 로 자동 포맷 (20001220 → 2000/12/20) */
+function formatDate(v: string): string {
+  const d = v.replace(/\D/g, "").slice(0, 8);
+  return [d.slice(0, 4), d.slice(4, 6), d.slice(6, 8)].filter(Boolean).join("/");
+}
+
+/** 숫자만 입력해도 hh:mm 으로 자동 포맷 (0915 → 09:15) */
+function formatTime(v: string): string {
+  const t = v.replace(/\D/g, "").slice(0, 4);
+  return [t.slice(0, 2), t.slice(2, 4)].filter(Boolean).join(":");
+}
+
 export default function InputForm({ onSubmit, onBack }: Props) {
   const [nickname, setNickname] = useState("");
   const [calendar, setCalendar] = useState<"solar" | "lunar">("solar");
   const [isLeapMonth, setIsLeapMonth] = useState(false);
-  const [year, setYear] = useState("");
-  const [month, setMonth] = useState("");
-  const [day, setDay] = useState("");
-  const [hour, setHour] = useState("");
-  const [minute, setMinute] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [birthTime, setBirthTime] = useState("");
   const [hourUnknown, setHourUnknown] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,25 +34,40 @@ export default function InputForm({ onSubmit, onBack }: Props) {
     e.preventDefault();
     setError(null);
 
+    // 날짜: yyyy/mm/dd (구분자 / - . 허용)
+    const dateMatch = birthDate
+      .trim()
+      .match(/^(\d{4})\s*[/\-.]\s*(\d{1,2})\s*[/\-.]\s*(\d{1,2})$/);
+    if (!dateMatch) {
+      setError("생년월일을 yyyy/mm/dd 형식으로 입력해 주세요. (예: 2005/05/12)");
+      return;
+    }
+
+    // 시간: hh:mm (분 생략 시 0)
+    let hourVal: number | null = null;
+    let minuteVal = 0;
+    if (!hourUnknown) {
+      const timeMatch = birthTime.trim().match(/^(\d{1,2})\s*:\s*(\d{1,2})?$/);
+      if (!timeMatch) {
+        setError(
+          "출생 시간을 hh:mm 형식으로 입력하거나 '출생 시간 모름'을 선택해 주세요. (예: 09:15)",
+        );
+        return;
+      }
+      hourVal = Number(timeMatch[1]);
+      minuteVal = timeMatch[2] ? Number(timeMatch[2]) : 0;
+    }
+
     const candidate: SajuInput = {
-      year: Number(year),
-      month: Number(month),
-      day: Number(day),
-      hour: hourUnknown ? null : hour === "" ? null : Number(hour),
-      minute: hourUnknown || minute === "" ? 0 : Number(minute),
+      year: Number(dateMatch[1]),
+      month: Number(dateMatch[2]),
+      day: Number(dateMatch[3]),
+      hour: hourVal,
+      minute: minuteVal,
       isLunar: calendar === "lunar",
       isLeapMonth: calendar === "lunar" ? isLeapMonth : undefined,
       nickname: nickname.trim() || undefined,
     };
-
-    if (!candidate.year || !candidate.month || !candidate.day) {
-      setError("생년월일을 모두 입력해 주세요.");
-      return;
-    }
-    if (!hourUnknown && hour === "") {
-      setError("출생 시간을 입력하거나 '출생 시간 모름'을 선택해 주세요.");
-      return;
-    }
 
     const parsed = sajuInputSchema.safeParse(candidate);
     if (!parsed.success) {
@@ -109,56 +133,27 @@ export default function InputForm({ onSubmit, onBack }: Props) {
 
         <div className="field">
           <label>생년월일</label>
-          <div className="row">
-            <input
-              className="input"
-              type="number"
-              inputMode="numeric"
-              placeholder="년"
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-            />
-            <input
-              className="input"
-              type="number"
-              inputMode="numeric"
-              placeholder="월"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-            />
-            <input
-              className="input"
-              type="number"
-              inputMode="numeric"
-              placeholder="일"
-              value={day}
-              onChange={(e) => setDay(e.target.value)}
-            />
-          </div>
+          <input
+            className="input"
+            inputMode="numeric"
+            placeholder="yyyy/mm/dd (예: 2005/05/12)"
+            value={birthDate}
+            maxLength={10}
+            onChange={(e) => setBirthDate(formatDate(e.target.value))}
+          />
         </div>
 
         <div className="field">
           <label>출생 시간</label>
-          <div className="row" style={{ gridTemplateColumns: "1fr 1fr" }}>
-            <input
-              className="input"
-              type="number"
-              inputMode="numeric"
-              placeholder="시 (0-23)"
-              value={hour}
-              disabled={hourUnknown}
-              onChange={(e) => setHour(e.target.value)}
-            />
-            <input
-              className="input"
-              type="number"
-              inputMode="numeric"
-              placeholder="분 (0-59)"
-              value={minute}
-              disabled={hourUnknown}
-              onChange={(e) => setMinute(e.target.value)}
-            />
-          </div>
+          <input
+            className="input"
+            inputMode="numeric"
+            placeholder="hh:mm (예: 09:15)"
+            value={birthTime}
+            disabled={hourUnknown}
+            maxLength={5}
+            onChange={(e) => setBirthTime(formatTime(e.target.value))}
+          />
           <label className="checkbox" style={{ marginTop: 10 }}>
             <input
               type="checkbox"
