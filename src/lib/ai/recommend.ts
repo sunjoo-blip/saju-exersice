@@ -1,0 +1,88 @@
+/**
+ * OpenAI 호출 + 응답 검증 (명세 F4, 비기능: AI 실패/잘못된 JSON 예외 처리).
+ * 서버 전용 모듈 — OPENAI_API_KEY 환경변수를 사용합니다.
+ */
+
+import OpenAI from "openai";
+import { recommendationSchema, type Recommendation } from "./schema";
+import { SYSTEM_PROMPT, buildUserPrompt } from "./prompt";
+import type { SajuResult } from "../saju/types";
+
+export class RecommendationError extends Error {
+  constructor(
+    message: string,
+    public readonly code:
+      | "NO_API_KEY"
+      | "AI_FAILED"
+      | "INVALID_JSON"
+      | "SCHEMA_INVALID",
+  ) {
+    super(message);
+    this.name = "RecommendationError";
+  }
+}
+
+let client: OpenAI | null = null;
+function getClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new RecommendationError(
+      "OPENAI_API_KEY 환경변수가 설정되지 않았습니다.",
+      "NO_API_KEY",
+    );
+  }
+  if (!client) client = new OpenAI({ apiKey });
+  return client;
+}
+
+export async function generateRecommendation(
+  saju: SajuResult,
+  nickname?: string,
+): Promise<Recommendation> {
+  const openai = getClient();
+  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+
+  let raw: string | null = null;
+  try {
+    const completion = await openai.chat.completions.create({
+      model,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: buildUserPrompt(saju, nickname) },
+      ],
+    });
+    raw = completion.choices[0]?.message?.content ?? null;
+  } catch (err) {
+    throw new RecommendationError(
+      `AI 호출에 실패했습니다: ${(err as Error).message}`,
+      "AI_FAILED",
+    );
+  }
+
+  if (!raw) {
+    throw new RecommendationError("AI 응답이 비어 있습니다.", "AI_FAILED");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new RecommendationError(
+      "AI 응답이 올바른 JSON이 아닙니다.",
+      "INVALID_JSON",
+    );
+  }
+
+  const result = recommendationSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new RecommendationError(
+      `AI 응답이 스키마를 만족하지 않습니다: ${result.error.issues
+        .map((i) => i.path.join("."))
+        .join(", ")}`,
+      "SCHEMA_INVALID",
+    );
+  }
+
+  return result.data;
+}
