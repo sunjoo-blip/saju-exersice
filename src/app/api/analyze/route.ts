@@ -11,6 +11,7 @@ import { NextResponse } from "next/server";
 import { calculateSaju } from "@/lib/saju/calculate";
 import { sajuInputSchema } from "@/lib/saju/validate";
 import { generateRecommendation, RecommendationError } from "@/lib/ai/recommend";
+import { isAllowed } from "@/lib/access";
 import type { AnalyzeResponse, PublicSajuSummary } from "@/lib/types";
 import type { SajuResult } from "@/lib/saju/types";
 
@@ -44,6 +45,14 @@ function toPublicSummary(saju: SajuResult): PublicSajuSummary {
 }
 
 export async function POST(req: Request): Promise<NextResponse<AnalyzeResponse>> {
+  // 시크릿 코드 검증 — OpenAI 호출 전에 가장 먼저 차단.
+  if (!isAllowed(req)) {
+    return NextResponse.json(
+      { ok: false, error: "접속 코드가 올바르지 않아요.", code: "UNAUTHORIZED" },
+      { status: 401 },
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();

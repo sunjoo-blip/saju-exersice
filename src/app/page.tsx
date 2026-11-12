@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import InputForm from "@/components/InputForm";
 import ResultView from "@/components/ResultView";
 import type { SajuInput } from "@/lib/saju/types";
@@ -12,13 +12,43 @@ export default function Home() {
   const [step, setStep] = useState<Step>("landing");
   const [result, setResult] = useState<AnalyzeSuccess | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [code, setCode] = useState<string>("");
+
+  // 접속 코드는 localStorage 에 기억해 재입력 수고를 덜어줍니다.
+  useEffect(() => {
+    setCode(localStorage.getItem("accessCode") ?? "");
+  }, []);
+
+  function saveCode(next: string) {
+    setCode(next);
+    localStorage.setItem("accessCode", next);
+  }
+
+  // 랜딩 '입장' 버튼: 입력 화면으로 넘어가기 전에 코드를 먼저 검증.
+  // 성공하면 input 단계로 이동, 실패하면 Landing 에 에러를 돌려줌.
+  async function enter(): Promise<string | null> {
+    try {
+      const res = await fetch("/api/verify", {
+        method: "POST",
+        headers: { "x-access-code": code },
+      });
+      if (!res.ok) return "접속 코드가 올바르지 않아요.";
+      setStep("input");
+      return null;
+    } catch {
+      return "접속 확인 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.";
+    }
+  }
 
   async function analyze(input: SajuInput) {
     setStep("loading");
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-access-code": code,
+        },
         body: JSON.stringify(input),
       });
       const data: AnalyzeResponse = await res.json();
@@ -38,7 +68,9 @@ export default function Home() {
 
   return (
     <main className="shell">
-      {step === "landing" && <Landing onStart={() => setStep("input")} />}
+      {step === "landing" && (
+        <Landing code={code} onCodeChange={saveCode} onEnter={enter} />
+      )}
 
       {step === "input" && (
         <InputForm onSubmit={analyze} onBack={() => setStep("landing")} />
@@ -61,7 +93,27 @@ export default function Home() {
   );
 }
 
-function Landing({ onStart }: { onStart: () => void }) {
+function Landing({
+  code,
+  onCodeChange,
+  onEnter,
+}: {
+  code: string;
+  onCodeChange: (v: string) => void;
+  onEnter: () => Promise<string | null>;
+}) {
+  const [verifying, setVerifying] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+
+  async function handleEnter() {
+    if (code.trim().length === 0 || verifying) return;
+    setVerifying(true);
+    setCodeError(null);
+    const err = await onEnter();
+    if (err) setCodeError(err);
+    setVerifying(false);
+  }
+
   return (
     <div className="center" style={{ paddingTop: 48 }}>
       <p className="eyebrow">명리학 x 운동</p>
@@ -76,12 +128,38 @@ function Landing({ onStart }: { onStart: () => void }) {
         ☯
       </div>
 
-      <button className="btn btn-primary" onClick={onStart}>
-        내 운동 팔자 확인하기
+      <div className="field" style={{ maxWidth: 280, margin: "0 auto 12px" }}>
+        <input
+          className="input"
+          placeholder="접속 코드를 입력하세요"
+          value={code}
+          onChange={(e) => {
+            onCodeChange(e.target.value);
+            if (codeError) setCodeError(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleEnter();
+          }}
+          autoComplete="off"
+          style={{ textAlign: "center" }}
+        />
+        {codeError && (
+          <p className="error-text" style={{ marginTop: 8 }}>
+            {codeError}
+          </p>
+        )}
+      </div>
+
+      <button
+        className="btn btn-primary"
+        onClick={handleEnter}
+        disabled={code.trim().length === 0 || verifying}
+      >
+        {verifying ? "확인 중…" : "내 운동 팔자 확인하기"}
       </button>
 
       <p className="disclaimer">
-        회원가입 없이 바로 확인할 수 있어요.
+        초대받은 분만 접속 코드로 이용할 수 있어요.
         <br />
         명리학 기반 엔터테인먼트 콘텐츠이며 과학적 진단이 아닙니다.
       </p>
