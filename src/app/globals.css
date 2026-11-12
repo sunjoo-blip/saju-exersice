@@ -379,3 +379,36 @@ body {
   padding: 1px 8px;
   vertical-align: middle;
 }
+
+/* 결과 카드 가운데 — 추천 운동 아이콘 */
+.share-emoji {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  font-size: clamp(40px, 13vw, 56px);
+  line-height: 1;
+  filter: drop-shadow(0 6px 18px rgba(217, 181, 106, 0.25));
+}
+
+/* 보조 공유 버튼 (링크 복사 · X) */
+.share-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font: inherit;
+  cursor: pointer;
+  padding: 4px;
+}
+.link-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

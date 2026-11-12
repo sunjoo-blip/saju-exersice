@@ -5,11 +5,14 @@ import { toPng } from "html-to-image";
 import type { Recommendation } from "@/lib/ai/schema";
 import type { SajuSuccess } from "@/lib/types";
 import { ALL_OHAENG, OHAENG_META, type Ohaeng } from "@/lib/saju/constants";
-import { OHAENG_FILL_HINT } from "@/lib/exercise/catalog";
+import { EXERCISE_EMOJI, OHAENG_FILL_HINT } from "@/lib/exercise/catalog";
 import OhaengBars from "./OhaengBars";
 import PlaceCTA from "./PlaceCTA";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+/** 공유 링크 — 환경변수가 없으면 현재 접속 도메인 사용 (localhost 링크가 공유되던 문제 방지) */
+function siteUrl(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+}
 
 /** AI 해석이 오기 전 자리표시 */
 function Skeleton({ lines = 3 }: { lines?: number }) {
@@ -49,20 +52,22 @@ export default function ResultView({
   const { saju, picks } = base;
   const cardRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const targets = fillTargets(saju.ohaeng.counts, saju.ohaeng.missing);
   const isMissing = saju.ohaeng.missing.length > 0;
+
+  async function renderCard(): Promise<string> {
+    return toPng(cardRef.current!, { pixelRatio: 2, cacheBust: true });
+  }
 
   async function saveImage() {
     if (!cardRef.current || !rec) return;
     setSaving(true);
     try {
-      const dataUrl = await toPng(cardRef.current, {
-        pixelRatio: 2,
-        cacheBust: true,
-      });
       const link = document.createElement("a");
       link.download = `운동팔자_${rec.typeName}.png`;
-      link.href = dataUrl;
+      link.href = await renderCard();
       link.click();
     } catch {
       alert("이미지 저장에 실패했어요. 화면을 캡처해 저장해 주세요.");
@@ -71,12 +76,54 @@ export default function ResultView({
     }
   }
 
+  /**
+   * 모바일: OS 공유 시트(카카오톡·인스타 스토리 등)로 결과 이미지 + 링크 공유.
+   * 공유 시트가 없는 환경(데스크톱 등)에선 링크 복사로 대체.
+   */
+  async function share() {
+    if (!rec || !cardRef.current) return;
+    const text = `${rec.shareText}\n${siteUrl()}`;
+    setSharing(true);
+    try {
+      if (navigator.share) {
+        try {
+          const blob = await (await fetch(await renderCard())).blob();
+          const file = new File([blob], "unwoonpalja.png", { type: "image/png" });
+          if (navigator.canShare?.({ files: [file] })) {
+            await navigator.share({ files: [file], text });
+            return;
+          }
+        } catch (e) {
+          if ((e as Error).name === "AbortError") return; // 사용자가 공유 취소
+        }
+        await navigator.share({ text, url: siteUrl() });
+        return;
+      }
+      await copyLink();
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") await copyLink();
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function copyLink() {
+    if (!rec) return;
+    try {
+      await navigator.clipboard.writeText(`${rec.shareText}\n${siteUrl()}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      alert("복사에 실패했어요. 주소창의 링크를 복사해 주세요.");
+    }
+  }
+
   function shareToX() {
     if (!rec) return;
     // 공유 텍스트: 결과 유형 + 서비스 URL (개인 생년월일/생시 미포함 — 명세 F6/4)
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
       rec.shareText,
-    )}&url=${encodeURIComponent(SITE_URL)}`;
+    )}&url=${encodeURIComponent(siteUrl())}`;
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
@@ -101,6 +148,11 @@ export default function ResultView({
           ) : (
             <Skeleton lines={1} />
           )}
+        </div>
+        <div className="share-emoji" aria-hidden>
+          {picks.map((p) => (
+            <span key={p.name}>{EXERCISE_EMOJI[p.name]}</span>
+          ))}
         </div>
         {rec ? (
           <p className="serif" style={{ fontSize: 18, lineHeight: 1.5 }}>
@@ -132,9 +184,22 @@ export default function ResultView({
         >
           {saving ? "이미지 만드는 중…" : "결과 이미지 저장하기"}
         </button>
-        <button className="btn btn-ghost" onClick={shareToX} disabled={!rec}>
-          X에 공유하기
+        <button
+          className="btn btn-ghost"
+          onClick={share}
+          disabled={!rec || sharing}
+        >
+          {copied ? "링크를 복사했어요 ✓" : "친구에게 공유하기"}
         </button>
+        <div className="share-row">
+          <button className="link-btn" onClick={copyLink} disabled={!rec}>
+            링크 복사
+          </button>
+          <span className="muted">·</span>
+          <button className="link-btn" onClick={shareToX} disabled={!rec}>
+            X에 공유
+          </button>
+        </div>
       </div>
 
       {recError && (
