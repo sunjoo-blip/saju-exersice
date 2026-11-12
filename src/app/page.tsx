@@ -4,13 +4,18 @@ import { useEffect, useState } from "react";
 import InputForm from "@/components/InputForm";
 import ResultView from "@/components/ResultView";
 import type { SajuInput } from "@/lib/saju/types";
-import type { AnalyzeResponse, AnalyzeSuccess } from "@/lib/types";
+import type { Recommendation } from "@/lib/ai/schema";
+import type { AnalyzeResponse, SajuResponse, SajuSuccess } from "@/lib/types";
 
 type Step = "landing" | "input" | "loading" | "result" | "error";
 
 export default function Home() {
   const [step, setStep] = useState<Step>("landing");
-  const [result, setResult] = useState<AnalyzeSuccess | null>(null);
+  // 사주 계산 결과(즉시) + AI 해석(나중에 채움)을 따로 들고 있음
+  const [base, setBase] = useState<SajuSuccess | null>(null);
+  const [rec, setRec] = useState<Recommendation | null>(null);
+  const [recError, setRecError] = useState<string | null>(null);
+  const [lastInput, setLastInput] = useState<SajuInput | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [code, setCode] = useState<string>("");
 
@@ -40,26 +45,46 @@ export default function Home() {
     }
   }
 
+  function post(path: string, input: SajuInput) {
+    return fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-access-code": code },
+      body: JSON.stringify(input),
+    });
+  }
+
+  /** AI 해석 — 결과 화면을 먼저 보여준 뒤 백그라운드로 채움 */
+  async function loadInterpretation(input: SajuInput) {
+    setRec(null);
+    setRecError(null);
+    try {
+      const data: AnalyzeResponse = await (await post("/api/analyze", input)).json();
+      if (!data.ok) {
+        setRecError(data.error);
+        return;
+      }
+      setRec(data.recommendation);
+    } catch {
+      setRecError("네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.");
+    }
+  }
+
   async function analyze(input: SajuInput) {
     setStep("loading");
+    setLastInput(input);
     try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-access-code": code,
-        },
-        body: JSON.stringify(input),
-      });
-      const data: AnalyzeResponse = await res.json();
+      // 1) 사주 계산 + 추천 운동은 규칙 기반이라 즉시 응답
+      const data: SajuResponse = await (await post("/api/saju", input)).json();
       if (!data.ok) {
         setErrorMsg(data.error);
         setStep("error");
         return;
       }
-      setResult(data);
+      setBase(data);
       setStep("result");
       window.scrollTo({ top: 0 });
+      // 2) AI 해석은 이어서 채움
+      void loadInterpretation(input);
     } catch {
       setErrorMsg("네트워크 오류가 발생했어요. 잠시 후 다시 시도해 주세요.");
       setStep("error");
@@ -78,8 +103,14 @@ export default function Home() {
 
       {step === "loading" && <Loading />}
 
-      {step === "result" && result && (
-        <ResultView data={result} onRestart={() => setStep("landing")} />
+      {step === "result" && base && (
+        <ResultView
+          base={base}
+          rec={rec}
+          recError={recError}
+          onRetryInterpretation={() => lastInput && loadInterpretation(lastInput)}
+          onRestart={() => setStep("input")}
+        />
       )}
 
       {step === "error" && (

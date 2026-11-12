@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Recommendation } from "@/lib/ai/schema";
+import type { ExercisePick } from "@/lib/exercise/pick";
 
 const OBUD_URL = process.env.NEXT_PUBLIC_OBUD_URL || "https://obud.co";
 
@@ -13,7 +13,7 @@ const OBUD_URL = process.env.NEXT_PUBLIC_OBUD_URL || "https://obud.co";
 export default function PlaceCTA({
   recommendations,
 }: {
-  recommendations: Recommendation["recommendations"];
+  recommendations: ExercisePick[];
 }) {
   const [selected, setSelected] = useState(recommendations[0]?.name ?? "");
   const [region, setRegion] = useState("");
