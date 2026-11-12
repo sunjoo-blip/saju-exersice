@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { EXERCISE_EMOJI, obudDiscoverUrl } from "@/lib/exercise/catalog";
 import type { ExercisePick } from "@/lib/exercise/pick";
 
-const OBUD_URL = process.env.NEXT_PUBLIC_OBUD_URL || "https://obud.co";
+const OBUD_URL = process.env.NEXT_PUBLIC_OBUD_URL || "https://www.obud.co";
 
 /**
  * 운동 장소 탐색 (명세 F7).
- * - 추천 운동 중 하나 + 지역을 선택해 오붓으로 연결합니다.
+ * - 오붓 지도(/discover)로 해당 운동 카테고리가 선택된 상태로 연결합니다.
+ *   (이전 /search?q= 링크는 오붓 검색 화면이 q 파라미터를 읽지 않아 빈 검색창만 떴음)
  * - 장소를 임의로 생성하지 않습니다. 실제 탐색/예약은 오붓에서 진행됩니다.
  */
 export default function PlaceCTA({
@@ -15,21 +17,19 @@ export default function PlaceCTA({
 }: {
   recommendations: ExercisePick[];
 }) {
-  const [selected, setSelected] = useState(recommendations[0]?.name ?? "");
-  const [region, setRegion] = useState("");
+  const [selected, setSelected] = useState(recommendations[0]?.name);
 
-  function go() {
-    const q = encodeURIComponent([region, selected].filter(Boolean).join(" "));
-    // 실제 데이터 연동(후순위) 전까지는 오붓 탐색/검색 진입점으로 연결.
-    const url = `${OBUD_URL}/search?q=${q}`;
+  function open(url: string) {
     window.open(url, "_blank", "noopener,noreferrer");
   }
+
+  if (!selected) return null;
 
   return (
     <div className="card">
       <p className="section-label">어디서 해볼까?</p>
       <p className="sub" style={{ marginTop: 0 }}>
-        추천 운동을 실제로 경험할 수 있는 곳을 찾아보세요.
+        오붓 지도에서 내 주변 스튜디오를 바로 찾아보세요.
       </p>
 
       <div className="field">
@@ -55,28 +55,33 @@ export default function PlaceCTA({
               }}
               onClick={() => setSelected(r.name)}
             >
-              {r.name}
+              {EXERCISE_EMOJI[r.name]} {r.name}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="field">
-        <label>지역 (선택)</label>
-        <input
-          className="input"
-          placeholder="예: 강남, 성수, 부산 서면"
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-        />
+      <div className="stack">
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => open(obudDiscoverUrl(OBUD_URL, [selected]))}
+        >
+          {selected} 스튜디오 지도에서 보기
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() =>
+            open(obudDiscoverUrl(OBUD_URL, recommendations.map((r) => r.name)))
+          }
+        >
+          추천 운동 3개 한 번에 보기
+        </button>
       </div>
-
-      <button type="button" className="btn btn-primary" onClick={go}>
-        {selected} 할 수 있는 곳 찾아보기
-      </button>
       <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>
-        실제 운영 중인 장소 정보는 오붓에서 확인할 수 있어요. 조건에 맞는 곳이 없으면
-        다른 운동이나 지역으로 바꿔보세요.
+        실제 운영 중인 장소 정보는 오붓에서 확인할 수 있어요. 오붓패스 하나로 여러
+        운동을 번갈아 다녀볼 수도 있어요.
       </p>
     </div>
   );
