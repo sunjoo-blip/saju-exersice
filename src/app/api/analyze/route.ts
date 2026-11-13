@@ -11,6 +11,7 @@ import { NextResponse } from "next/server";
 import { generateRecommendation, RecommendationError } from "@/lib/ai/recommend";
 import { pickExercises } from "@/lib/exercise/pick";
 import { readSajuRequest, toPublicSummary } from "@/lib/server/sajuRequest";
+import { checkRateLimit, withBrowserCookie } from "@/lib/rateLimit";
 import type { AnalyzeResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -24,29 +25,52 @@ export async function POST(req: Request): Promise<NextResponse<AnalyzeResponse>>
   const { input, saju } = r;
   const picks = pickExercises(saju);
 
+  // 하루 1회 제한 — OpenAI 호출 전에 평가/선점.
+  const rate = await checkRateLimit(req);
+  if (!rate.allowed) {
+    return withBrowserCookie(
+      NextResponse.json(
+        { ok: false as const, error: rate.message!, code: "RATE_LIMITED" },
+        { status: 429 },
+      ),
+      rate.browserId,
+    );
+  }
+
   try {
     const recommendation = await generateRecommendation(saju, picks, input.nickname);
-    return NextResponse.json({
-      ok: true,
-      saju: toPublicSummary(saju),
-      picks,
-      recommendation,
-    });
+    return withBrowserCookie(
+      NextResponse.json({
+        ok: true as const,
+        saju: toPublicSummary(saju),
+        picks,
+        recommendation,
+      }),
+      rate.browserId,
+    );
   } catch (err) {
+    // 생성 실패는 과금이 없으므로 소진한 하루 한도를 되돌려줍니다.
+    await rate.rollback();
     if (err instanceof RecommendationError) {
       const status = err.code === "NO_API_KEY" ? 503 : 502;
-      return NextResponse.json(
-        { ok: false, error: err.message, code: err.code },
-        { status },
+      return withBrowserCookie(
+        NextResponse.json(
+          { ok: false as const, error: err.message, code: err.code },
+          { status },
+        ),
+        rate.browserId,
       );
     }
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "결과 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.",
-        code: "UNKNOWN",
-      },
-      { status: 500 },
+    return withBrowserCookie(
+      NextResponse.json(
+        {
+          ok: false as const,
+          error: "결과 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+          code: "UNKNOWN",
+        },
+        { status: 500 },
+      ),
+      rate.browserId,
     );
   }
 }

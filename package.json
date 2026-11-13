@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "html-to-image": "^1.11.11",
+    "ioredis": "^5.11.1",
     "lunar-typescript": "^1.7.3",
     "next": "^14.2.35",
     "openai": "^4.68.4",
