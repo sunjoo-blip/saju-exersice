@@ -9,7 +9,6 @@
 
 import { NextResponse } from "next/server";
 import { generateRecommendation, RecommendationError } from "@/lib/ai/recommend";
-import { pickExercises } from "@/lib/exercise/pick";
 import { readSajuRequest, toPublicSummary } from "@/lib/server/sajuRequest";
 import { checkRateLimit, withBrowserCookie } from "@/lib/rateLimit";
 import type { AnalyzeResponse } from "@/lib/types";
@@ -23,7 +22,6 @@ export async function POST(req: Request): Promise<NextResponse<AnalyzeResponse>>
   const r = await readSajuRequest(req);
   if (r instanceof NextResponse) return r;
   const { input, saju } = r;
-  const picks = pickExercises(saju);
 
   // 하루 1회 제한 — OpenAI 호출 전에 평가/선점.
   const rate = await checkRateLimit(req);
@@ -38,12 +36,11 @@ export async function POST(req: Request): Promise<NextResponse<AnalyzeResponse>>
   }
 
   try {
-    const recommendation = await generateRecommendation(saju, picks, input.nickname);
+    const recommendation = await generateRecommendation(saju, input.nickname);
     return withBrowserCookie(
       NextResponse.json({
         ok: true as const,
         saju: toPublicSummary(saju),
-        picks,
         recommendation,
       }),
       rate.browserId,

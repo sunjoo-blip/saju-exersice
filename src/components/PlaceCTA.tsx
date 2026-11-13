@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { EXERCISE_EMOJI, obudDiscoverUrl } from "@/lib/exercise/catalog";
-import type { ExercisePick } from "@/lib/exercise/pick";
+import type { Recommendation } from "@/lib/ai/schema";
 
 const OBUD_URL = process.env.NEXT_PUBLIC_OBUD_URL || "https://www.obud.co";
 
@@ -15,7 +15,7 @@ const OBUD_URL = process.env.NEXT_PUBLIC_OBUD_URL || "https://www.obud.co";
 export default function PlaceCTA({
   recommendations,
 }: {
-  recommendations: ExercisePick[];
+  recommendations: Recommendation["recommendations"];
 }) {
   const [selected, setSelected] = useState(recommendations[0]?.name);
 

@@ -45,7 +45,8 @@ export default function ResultView({
   rec: Recommendation | null;
   recError: string | null;
 }) {
-  const { saju, picks } = base;
+  const { saju } = base;
+  const recos = rec?.recommendations ?? [];
   const cardRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -146,8 +147,8 @@ export default function ResultView({
           )}
         </div>
         <div className="share-emoji" aria-hidden>
-          {picks.map((p) => (
-            <span key={p.name}>{EXERCISE_EMOJI[p.name]}</span>
+          {recos.map((r) => (
+            <span key={r.name}>{EXERCISE_EMOJI[r.name]}</span>
           ))}
         </div>
         {rec ? (
@@ -162,11 +163,15 @@ export default function ResultView({
             추천 운동
           </p>
           <div className="chips">
-            {picks.map((p) => (
-              <span className="chip" key={p.name}>
-                {p.name}
-              </span>
-            ))}
+            {rec ? (
+              recos.map((r) => (
+                <span className="chip" key={r.name}>
+                  {r.name}
+                </span>
+              ))
+            ) : (
+              <Skeleton lines={1} />
+            )}
           </div>
         </div>
       </div>
@@ -204,27 +209,30 @@ export default function ResultView({
         </div>
       )}
 
-      {/* ===== 추천 운동 TOP 3 (규칙 기반 — 즉시 표시) ===== */}
+      {/* ===== 추천 운동 TOP 3 (AI 선정 — 해석과 함께 채움) ===== */}
       <div className="card">
         <p className="section-label">추천 운동 TOP 3</p>
-        {picks.map((p, i) => {
-          const reason = rec?.recommendations.find((r) => r.name === p.name)?.reason;
-          return (
-            <div className="reco" key={p.name}>
-              <div className="reco-rank">{i + 1}</div>
-              <div style={{ flex: 1 }}>
-                <div className="reco-name">
-                  {p.name} <span className="basis">{p.basis}</span>
+        {rec
+          ? recos.map((r, i) => (
+              <div className="reco" key={r.name}>
+                <div className="reco-rank">{i + 1}</div>
+                <div style={{ flex: 1 }}>
+                  <div className="reco-name">
+                    {EXERCISE_EMOJI[r.name]} {r.name}
+                  </div>
+                  <div className="reco-reason">{r.reason}</div>
                 </div>
-                {reason ? (
-                  <div className="reco-reason">{reason}</div>
-                ) : (
-                  !recError && <Skeleton lines={2} />
-                )}
               </div>
-            </div>
-          );
-        })}
+            ))
+          : !recError &&
+            [0, 1, 2].map((i) => (
+              <div className="reco" key={i}>
+                <div className="reco-rank">{i + 1}</div>
+                <div style={{ flex: 1 }}>
+                  <Skeleton lines={2} />
+                </div>
+              </div>
+            ))}
       </div>
 
       {/* ===== 채워야 할 기운 ===== */}
@@ -317,8 +325,8 @@ export default function ResultView({
         </div>
       )}
 
-      {/* ===== 장소 탐색 (F7) ===== */}
-      <PlaceCTA recommendations={picks} />
+      {/* ===== 장소 탐색 (F7) — AI 추천 운동이 정해진 뒤 노출 ===== */}
+      {rec && <PlaceCTA recommendations={recos} />}
 
       <p className="disclaimer">
         운동팔자는 명리학 기반 엔터테인먼트 콘텐츠예요. 과학적 진단이나 의학적
