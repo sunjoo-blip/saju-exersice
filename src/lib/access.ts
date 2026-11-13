@@ -1,17 +1,31 @@
 /**
  * 접속 코드 게이트 (OpenAI 비용 보호).
- * - ACCESS_CODES 환경변수(쉼표로 여러 개 가능)에 허용 코드를 넣습니다.
+ * - ACCESS_CODES 환경변수(쉼표로 여러 개 가능)에 허용 코드를 넣습니다. (한글 코드도 허용)
  * - 클라이언트는 x-access-code 헤더로 코드를 보냅니다.
+ *   HTTP 헤더는 Latin-1 만 담을 수 있어, 한글 등 비ASCII 코드는 encodeURIComponent 로
+ *   인코딩해서 보내고 여기서 디코딩합니다.
  * - ACCESS_CODES 가 비어 있으면 게이트를 끕니다(로컬 개발용). 배포 시 반드시 설정하세요.
  */
+
+/** x-access-code 헤더를 읽어 디코딩 (한글 코드 지원). */
+function readAccessCode(req: Request): string {
+  const raw = req.headers.get("x-access-code") ?? "";
+  try {
+    return decodeURIComponent(raw).trim();
+  } catch {
+    return raw.trim(); // 잘못된 인코딩이면 원문 그대로 비교
+  }
+}
+
+function codeSet(raw: string | undefined): Set<string> {
+  return new Set((raw ?? "").split(",").map((c) => c.trim()).filter(Boolean));
+}
+
 export function isAllowed(req: Request): boolean {
   const raw = process.env.ACCESS_CODES?.trim();
   if (!raw) return true;
-  const allowed = new Set(
-    raw.split(",").map((c) => c.trim()).filter(Boolean),
-  );
-  const provided = req.headers.get("x-access-code")?.trim() ?? "";
-  return provided.length > 0 && allowed.has(provided);
+  const provided = readAccessCode(req);
+  return provided.length > 0 && codeSet(raw).has(provided);
 }
 
 /**
@@ -23,9 +37,6 @@ export function isAllowed(req: Request): boolean {
 export function isIpLimitExempt(req: Request): boolean {
   const raw = process.env.IP_EXEMPT_CODES?.trim();
   if (!raw) return false;
-  const exempt = new Set(
-    raw.split(",").map((c) => c.trim()).filter(Boolean),
-  );
-  const provided = req.headers.get("x-access-code")?.trim() ?? "";
-  return provided.length > 0 && exempt.has(provided);
+  const provided = readAccessCode(req);
+  return provided.length > 0 && codeSet(raw).has(provided);
 }

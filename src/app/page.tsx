@@ -36,7 +36,7 @@ export default function Home() {
     try {
       const res = await fetch("/api/verify", {
         method: "POST",
-        headers: { "x-access-code": code },
+        headers: { "x-access-code": encodeURIComponent(code) },
       });
       if (!res.ok) return "접속 코드가 올바르지 않아요.";
       // 입장과 동시에 오늘 한도를 미리 확인 → 초과면 입력 화면 버튼을 비활성화.
@@ -52,7 +52,9 @@ export default function Home() {
   async function refreshQuota() {
     try {
       const q = await (
-        await fetch("/api/quota", { headers: { "x-access-code": code } })
+        await fetch("/api/quota", {
+          headers: { "x-access-code": encodeURIComponent(code) },
+        })
       ).json();
       setBlockedMsg(q.ok && q.allowed === false ? q.message : null);
     } catch {
@@ -63,7 +65,10 @@ export default function Home() {
   function post(path: string, input: SajuInput) {
     return fetch(path, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-access-code": code },
+      headers: {
+        "Content-Type": "application/json",
+        "x-access-code": encodeURIComponent(code),
+      },
       body: JSON.stringify(input),
     });
   }
