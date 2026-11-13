@@ -2,14 +2,14 @@
    신비로운 동양 명리학 분위기 + 차분하고 감각적인 에디토리얼 (명세 F1/F5) */
 
 :root {
-  --night-900: #0b0b16;
-  --night-800: #14142a;
-  --night-700: #1e1e3c;
-  --ink: #e9e7f5;
-  --ink-dim: #a6a3c4;
+  --night-900: #10180f;
+  --night-800: #1a2720;
+  --night-700: #2b3e2f;
+  --ink: #eaf0e7;
+  --ink-dim: #a3b4a4;
   --gold: #d9b56a;
   --gold-soft: #e7cf9a;
-  --plum: #6d5a9c;
+  --plum: #4a7a5a;
   --rose: #c98b9b;
 
   --ohaeng-mok: #6fae8f; /* 목 */
@@ -34,8 +34,8 @@ body {
 
 body {
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(109, 90, 156, 0.35), transparent 60%),
-    radial-gradient(800px 500px at 80% 10%, rgba(201, 139, 155, 0.18), transparent 55%),
+    radial-gradient(1200px 600px at 50% -10%, rgba(74, 122, 90, 0.38), transparent 60%),
+    radial-gradient(800px 500px at 80% 10%, rgba(217, 181, 106, 0.12), transparent 55%),
     var(--night-900);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
@@ -107,7 +107,7 @@ body {
 
 /* ===== 카드 ===== */
 .card {
-  background: linear-gradient(180deg, rgba(30, 30, 60, 0.9), rgba(20, 20, 42, 0.9));
+  background: linear-gradient(180deg, rgba(43, 62, 47, 0.9), rgba(26, 39, 32, 0.9));
   border: 1px solid rgba(217, 181, 106, 0.22);
   border-radius: var(--radius);
   padding: 22px;
@@ -218,8 +218,8 @@ body {
 /* ===== 결과 공유 카드 (이미지 캡처 대상) ===== */
 .share-card {
   background:
-    radial-gradient(600px 300px at 50% 0%, rgba(109, 90, 156, 0.4), transparent 60%),
-    linear-gradient(180deg, #171733, #0d0d1e);
+    radial-gradient(600px 300px at 50% 0%, rgba(74, 122, 90, 0.42), transparent 60%),
+    linear-gradient(180deg, #223228, #101810);
   border: 1px solid rgba(217, 181, 106, 0.3);
   border-radius: var(--radius);
   padding: 28px 24px;
