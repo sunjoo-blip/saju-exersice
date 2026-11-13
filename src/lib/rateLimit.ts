@@ -114,15 +114,14 @@ export async function peekRateLimit(req: Request): Promise<PeekResult> {
   const r = redis();
   if (!r) return { allowed: true, browserId }; // 미설정 = 비활성(개발용)
 
-  const exempt = isIpLimitExempt(req); // obud2026 등 — IP 백스톱 면제
+  // 면제 코드(IP_EXEMPT_CODES) — 브라우저·IP 제한 모두 건너뛰어 무제한(행사/사무실/테스트용).
+  if (isIpLimitExempt(req)) return { allowed: true, browserId };
+
   const { ipKey, bidKey } = keysFor(req, browserId);
   try {
-    const [ipRaw, bidRaw] = await Promise.all([
-      exempt ? Promise.resolve(null) : r.get(ipKey),
-      r.get(bidKey),
-    ]);
+    const [ipRaw, bidRaw] = await Promise.all([r.get(ipKey), r.get(bidKey)]);
     const overBrowser = (Number(bidRaw) || 0) >= PER_BROWSER;
-    const overIp = !exempt && (Number(ipRaw) || 0) >= PER_IP;
+    const overIp = (Number(ipRaw) || 0) >= PER_IP;
     if (overBrowser || overIp) {
       return { allowed: false, browserId, message: limitMessage(overBrowser) };
     }
@@ -155,17 +154,20 @@ export async function checkRateLimit(req: Request): Promise<RateLimitResult> {
   const r = redis();
   if (!r) return { allowed: true, browserId, rollback: NOOP }; // 미설정 = 비활성(개발용)
 
-  const exempt = isIpLimitExempt(req); // obud2026 등 — IP 백스톱 면제(소진/집계 제외)
+  // 면제 코드(IP_EXEMPT_CODES) — 브라우저·IP 제한 모두 건너뛰어 무제한(행사/사무실/테스트용).
+  // 카운터를 올리지 않으므로 소진/집계에서도 제외됩니다.
+  if (isIpLimitExempt(req)) return { allowed: true, browserId, rollback: NOOP };
+
   const { ipKey, bidKey, ttl } = keysFor(req, browserId);
 
   try {
     const [ipCount, bidCount] = await Promise.all([
-      exempt ? Promise.resolve(0) : hit(r, ipKey, ttl),
+      hit(r, ipKey, ttl),
       hit(r, bidKey, ttl),
     ]);
 
     const overBrowser = bidCount > PER_BROWSER;
-    const overIp = !exempt && ipCount > PER_IP;
+    const overIp = ipCount > PER_IP;
     if (overBrowser || overIp) {
       return {
         allowed: false,
@@ -177,8 +179,7 @@ export async function checkRateLimit(req: Request): Promise<RateLimitResult> {
 
     const rollback = async () => {
       try {
-        // 면제 요청은 IP 카운터를 올리지 않았으므로 브라우저 카운터만 환불.
-        await Promise.all(exempt ? [r.decr(bidKey)] : [r.decr(ipKey), r.decr(bidKey)]);
+        await Promise.all([r.decr(ipKey), r.decr(bidKey)]);
       } catch {
         /* 환불 실패는 치명적이지 않음 */
       }

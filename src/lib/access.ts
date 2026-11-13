@@ -29,10 +29,10 @@ export function isAllowed(req: Request): boolean {
 }
 
 /**
- * IP 하루 제한 '면제' 코드인지 확인.
- * - IP_EXEMPT_CODES(쉼표로 여러 개) 에 해당하는 코드로 들어온 요청은 IP 백스톱을 건너뜁니다.
- *   (같은 와이파이의 여러 사람이 각자 브라우저당 하루 1회 이용할 수 있게 — 행사/사무실용)
- * - 브라우저당 하루 제한은 그대로 적용됩니다.
+ * 하루 제한 '면제' 코드인지 확인.
+ * - IP_EXEMPT_CODES(쉼표로 여러 개) 에 해당하는 코드로 들어온 요청은 레이트리밋을 무제한으로 건너뜁니다.
+ *   (브라우저당·IP당 제한 모두 면제 — 행사/사무실/테스트용. 한 기기로 여러 번 돌려도 막히지 않음)
+ * - 입장은 ACCESS_CODES 로 따로 검증하므로, 면제 코드도 ACCESS_CODES 에 포함돼 있어야 합니다.
  */
 export function isIpLimitExempt(req: Request): boolean {
   const raw = process.env.IP_EXEMPT_CODES?.trim();
