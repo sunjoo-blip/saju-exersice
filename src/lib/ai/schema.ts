@@ -6,27 +6,10 @@
 import { z } from "zod";
 
 /**
- * 추천 가능한 운동 종류(화이트리스트). AI 는 반드시 이 목록 안에서만 추천하며,
- * 서버에서 enum 으로 검증해 목록 밖 운동은 결과로 노출되지 않습니다.
+ * 추천 가능한 운동 종류(화이트리스트). 목록/매핑은 lib/exercise/catalog.ts 에서 관리합니다.
  */
-export const ALLOWED_EXERCISES = [
-  "요가",
-  "필라테스",
-  "바레",
-  "발레",
-  "하이록스 공식",
-  "크로스핏",
-  "GYM",
-  "싱잉볼",
-  "클라이밍",
-  "번지 피트니스",
-  "플라잉 요가",
-  "SNPE",
-  "스피닝",
-  "F45/FS8",
-  "그룹 트레이닝",
-  "복싱",
-] as const;
+import { ALLOWED_EXERCISES } from "../exercise/catalog";
+export { ALLOWED_EXERCISES };
 
 export const recommendationSchema = z.object({
   /** 운동 팔자 유형명 (예: "역마의 질주러") */
@@ -44,6 +27,8 @@ export const recommendationSchema = z.object({
         /** 반드시 ALLOWED_EXERCISES 목록 안의 값이어야 함 */
         name: z.enum(ALLOWED_EXERCISES),
         reason: z.string().min(1).max(300),
+        /** 추천 근거 라벨 (서버가 규칙으로 채움 — 예: "火 기운 보완") */
+        basis: z.string().optional(),
       }),
     )
     .length(3),
