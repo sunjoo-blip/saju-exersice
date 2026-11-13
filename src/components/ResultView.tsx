@@ -40,14 +40,10 @@ export default function ResultView({
   base,
   rec,
   recError,
-  onRetryInterpretation,
-  onRestart,
 }: {
   base: SajuSuccess;
   rec: Recommendation | null;
   recError: string | null;
-  onRetryInterpretation: () => void;
-  onRestart: () => void;
 }) {
   const { saju, picks } = base;
   const cardRef = useRef<HTMLDivElement>(null);
@@ -205,13 +201,6 @@ export default function ResultView({
       {recError && (
         <div className="notice" style={{ marginTop: 16 }}>
           해석을 불러오지 못했어요: {recError}
-          <button
-            className="btn btn-ghost"
-            style={{ marginTop: 10 }}
-            onClick={onRetryInterpretation}
-          >
-            해석 다시 불러오기
-          </button>
         </div>
       )}
 
@@ -330,12 +319,6 @@ export default function ResultView({
 
       {/* ===== 장소 탐색 (F7) ===== */}
       <PlaceCTA recommendations={picks} />
-
-      <div className="stack" style={{ marginTop: 16 }}>
-        <button className="btn btn-ghost" onClick={onRestart}>
-          다시 보기
-        </button>
-      </div>
 
       <p className="disclaimer">
         운동팔자는 명리학 기반 엔터테인먼트 콘텐츠예요. 과학적 진단이나 의학적

@@ -15,9 +15,10 @@ export default function Home() {
   const [base, setBase] = useState<SajuSuccess | null>(null);
   const [rec, setRec] = useState<Recommendation | null>(null);
   const [recError, setRecError] = useState<string | null>(null);
-  const [lastInput, setLastInput] = useState<SajuInput | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [code, setCode] = useState<string>("");
+  // 오늘 한도를 넘겼으면 안내 문구(= 버튼 비활성화 신호). null 이면 이용 가능.
+  const [blockedMsg, setBlockedMsg] = useState<string | null>(null);
 
   // 접속 코드는 localStorage 에 기억해 재입력 수고를 덜어줍니다.
   useEffect(() => {
@@ -38,10 +39,24 @@ export default function Home() {
         headers: { "x-access-code": code },
       });
       if (!res.ok) return "접속 코드가 올바르지 않아요.";
+      // 입장과 동시에 오늘 한도를 미리 확인 → 초과면 입력 화면 버튼을 비활성화.
+      await refreshQuota();
       setStep("input");
       return null;
     } catch {
       return "접속 확인 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.";
+    }
+  }
+
+  /** 오늘 분석 가능 여부를 읽기 전용으로 확인(비용 없음). 실패 시엔 허용으로 간주. */
+  async function refreshQuota() {
+    try {
+      const q = await (
+        await fetch("/api/quota", { headers: { "x-access-code": code } })
+      ).json();
+      setBlockedMsg(q.ok && q.allowed === false ? q.message : null);
+    } catch {
+      setBlockedMsg(null);
     }
   }
 
@@ -71,9 +86,9 @@ export default function Home() {
 
   async function analyze(input: SajuInput) {
     setStep("loading");
-    setLastInput(input);
     try {
-      // 1) 사주 계산 + 추천 운동은 규칙 기반이라 즉시 응답
+      // 1) 사주 계산 + 추천 운동은 규칙 기반이라 즉시 응답.
+      //    하루 한도를 넘겼으면 여기서 막혀 결과 화면으로 넘어가지 않음.
       const data: SajuResponse = await (await post("/api/saju", input)).json();
       if (!data.ok) {
         setErrorMsg(data.error);
@@ -98,19 +113,17 @@ export default function Home() {
       )}
 
       {step === "input" && (
-        <InputForm onSubmit={analyze} onBack={() => setStep("landing")} />
+        <InputForm
+          onSubmit={analyze}
+          onBack={() => setStep("landing")}
+          blockedMessage={blockedMsg}
+        />
       )}
 
       {step === "loading" && <Loading />}
 
       {step === "result" && base && (
-        <ResultView
-          base={base}
-          rec={rec}
-          recError={recError}
-          onRetryInterpretation={() => lastInput && loadInterpretation(lastInput)}
-          onRestart={() => setStep("input")}
-        />
+        <ResultView base={base} rec={rec} recError={recError} />
       )}
 
       {step === "error" && (

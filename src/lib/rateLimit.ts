@@ -79,6 +79,54 @@ async function hit(r: Redis, key: string, ttl: number): Promise<number> {
   return count;
 }
 
+function limitMessage(overBrowser: boolean): string {
+  return overBrowser
+    ? "오늘의 운동 팔자는 이미 확인했어요. 내일 다시 찾아와 주세요! 🙏"
+    : "지금은 이용자가 많아요. 잠시 뒤(내일) 다시 시도해 주세요. 🙏";
+}
+
+function keysFor(req: Request, browserId: string): { ipKey: string; bidKey: string; ttl: number } {
+  const { day, ttl } = kstDay();
+  return {
+    ipKey: `rl:analyze:${day}:ip:${clientIp(req)}`,
+    bidKey: `rl:analyze:${day}:bid:${browserId}`,
+    ttl,
+  };
+}
+
+export interface PeekResult {
+  /** 분석을 시작해도 되는지 */
+  allowed: boolean;
+  /** 응답에 심을 브라우저 식별 쿠키 값 */
+  browserId: string;
+  /** 차단 시 안내 메시지 */
+  message?: string;
+}
+
+/**
+ * 읽기 전용 한도 확인(카운터를 증가시키지 않음) — '내 운동 팔자 보기' 버튼 게이트용.
+ * 실제 소진은 checkRateLimit(/api/analyze)에서만 일어나므로 이중 카운트가 없습니다.
+ * 다음 번 증가가 한도를 넘길 상태(현재값 >= 한도)면 미리 막습니다.
+ */
+export async function peekRateLimit(req: Request): Promise<PeekResult> {
+  const browserId = readCookie(req, COOKIE_NAME) ?? crypto.randomUUID();
+  const r = redis();
+  if (!r) return { allowed: true, browserId }; // 미설정 = 비활성(개발용)
+
+  const { ipKey, bidKey } = keysFor(req, browserId);
+  try {
+    const [ipRaw, bidRaw] = await Promise.all([r.get(ipKey), r.get(bidKey)]);
+    const overBrowser = (Number(bidRaw) || 0) >= PER_BROWSER;
+    const overIp = (Number(ipRaw) || 0) >= PER_IP;
+    if (overBrowser || overIp) {
+      return { allowed: false, browserId, message: limitMessage(overBrowser) };
+    }
+    return { allowed: true, browserId };
+  } catch {
+    return { allowed: true, browserId }; // Redis 장애 → fail-open
+  }
+}
+
 export interface RateLimitResult {
   /** OpenAI 호출을 허용할지 */
   allowed: boolean;
@@ -102,9 +150,7 @@ export async function checkRateLimit(req: Request): Promise<RateLimitResult> {
   const r = redis();
   if (!r) return { allowed: true, browserId, rollback: NOOP }; // 미설정 = 비활성(개발용)
 
-  const { day, ttl } = kstDay();
-  const ipKey = `rl:analyze:${day}:ip:${clientIp(req)}`;
-  const bidKey = `rl:analyze:${day}:bid:${browserId}`;
+  const { ipKey, bidKey, ttl } = keysFor(req, browserId);
 
   try {
     const [ipCount, bidCount] = await Promise.all([
@@ -118,9 +164,7 @@ export async function checkRateLimit(req: Request): Promise<RateLimitResult> {
       return {
         allowed: false,
         browserId,
-        message: overBrowser
-          ? "오늘의 운동 팔자 해석은 이미 확인했어요. 내일 다시 찾아와 주세요! 🙏"
-          : "지금은 이용자가 많아요. 잠시 뒤(내일) 다시 시도해 주세요. 🙏",
+        message: limitMessage(overBrowser),
         rollback: NOOP, // 차단된 요청은 되돌릴 필요 없음
       };
     }

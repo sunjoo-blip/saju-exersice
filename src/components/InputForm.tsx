@@ -7,6 +7,8 @@ import type { SajuInput } from "@/lib/saju/types";
 interface Props {
   onSubmit: (input: SajuInput) => void;
   onBack: () => void;
+  /** 오늘 한도 초과 시 안내 문구. 있으면 제출 버튼을 비활성화합니다. */
+  blockedMessage?: string | null;
 }
 
 /** 숫자만 입력해도 yyyy/mm/dd 로 자동 포맷 (20001220 → 2000/12/20) */
@@ -21,7 +23,7 @@ function formatTime(v: string): string {
   return [t.slice(0, 2), t.slice(2, 4)].filter(Boolean).join(":");
 }
 
-export default function InputForm({ onSubmit, onBack }: Props) {
+export default function InputForm({ onSubmit, onBack, blockedMessage }: Props) {
   const [nickname, setNickname] = useState("");
   const [calendar, setCalendar] = useState<"solar" | "lunar">("solar");
   const [isLeapMonth, setIsLeapMonth] = useState(false);
@@ -32,6 +34,7 @@ export default function InputForm({ onSubmit, onBack }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (blockedMessage) return; // 오늘 한도 초과 — 제출 차단
     setError(null);
 
     // 날짜: yyyy/mm/dd (구분자 / - . 허용)
@@ -39,7 +42,7 @@ export default function InputForm({ onSubmit, onBack }: Props) {
       .trim()
       .match(/^(\d{4})\s*[/\-.]\s*(\d{1,2})\s*[/\-.]\s*(\d{1,2})$/);
     if (!dateMatch) {
-      setError("생년월일을 yyyy/mm/dd 형식으로 입력해 주세요. (예: 2005/05/12)");
+      setError("생년월일을 yyyy/mm/dd 형식으로 입력해 주세요. (예: 1992/03/11)");
       return;
     }
 
@@ -136,7 +139,7 @@ export default function InputForm({ onSubmit, onBack }: Props) {
           <input
             className="input"
             inputMode="numeric"
-            placeholder="yyyy/mm/dd (예: 2005/05/12)"
+            placeholder="yyyy/mm/dd (예: 1992/03/11)"
             value={birthDate}
             maxLength={10}
             onChange={(e) => setBirthDate(formatDate(e.target.value))}
@@ -148,7 +151,7 @@ export default function InputForm({ onSubmit, onBack }: Props) {
           <input
             className="input"
             inputMode="numeric"
-            placeholder="hh:mm (예: 09:15)"
+            placeholder="hh:mm (예: 10:31)"
             value={birthTime}
             disabled={hourUnknown}
             maxLength={5}
@@ -173,9 +176,18 @@ export default function InputForm({ onSubmit, onBack }: Props) {
       </div>
 
       <div className="stack">
-        <button type="submit" className="btn btn-primary">
-          내 운동 팔자 보기
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={!!blockedMessage}
+        >
+          {blockedMessage ? "오늘의 운동 팔자는 이미 확인했어요" : "내 운동 팔자 보기"}
         </button>
+        {blockedMessage && (
+          <p className="muted" style={{ textAlign: "center", fontSize: 13 }}>
+            {blockedMessage}
+          </p>
+        )}
         <button type="button" className="btn btn-ghost" onClick={onBack}>
           뒤로
         </button>
