@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   EXERCISE_EMOJI,
   OBUD_CATEGORY_ID,
@@ -8,6 +8,11 @@ import {
 } from "@/lib/exercise/catalog";
 import type { Recommendation } from "@/lib/ai/schema";
 import { AREAS, obudPlaceUrl, type Studio } from "@/lib/studios/areas";
+import type { Ohaeng } from "@/lib/saju/constants";
+import StudioMap, { NAVER_MAP_ENABLED } from "./StudioMap";
+import { districtsOf } from "@/lib/studios/ohaengPlaces";
+
+const OHAENG_LABEL: Record<Ohaeng, string> = { 목: "木", 화: "火", 토: "土", 금: "金", 수: "水" };
 
 const OBUD_URL = process.env.NEXT_PUBLIC_OBUD_URL || "https://www.obud.co";
 
@@ -21,14 +26,21 @@ type Loc = { id: string; label: string; lat: number; lng: number };
  */
 export default function PlaceCTA({
   recommendations,
+  fill = [],
 }: {
   recommendations: Recommendation["recommendations"];
+  /** 부족한 오행 — 수·목이면 한강·공원 근처 스튜디오를 먼저 추천 */
+  fill?: Ohaeng[];
 }) {
   const [selected, setSelected] = useState(recommendations[0]?.name);
   const [loc, setLoc] = useState<Loc>(AREAS[0]);
   const [studios, setStudios] = useState<Studio[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
+  const [mapOk, setMapOk] = useState(NAVER_MAP_ENABLED);
+  const [picked, setPicked] = useState<string | null>(null);
+  const onSelect = useCallback((slug: string) => setPicked(slug), []);
+  const onMapUnavailable = useCallback(() => setMapOk(false), []);
 
   useEffect(() => {
     if (!selected) return;
@@ -38,16 +50,23 @@ export default function PlaceCTA({
       categoryIds: String(OBUD_CATEGORY_ID[selected]),
       lat: String(loc.lat),
       lng: String(loc.lng),
+      limit: "8",
+      fill: fill.join(","),
     });
     fetch(`/api/studios?${qs}`, { signal: ctrl.signal })
       .then((r) => r.json())
-      .then((j: { studios?: Studio[] }) => setStudios(j.studios ?? []))
+      .then((j: { studios?: Studio[] }) => {
+        const list = j.studios ?? [];
+        setStudios(list);
+        setPicked(list[0]?.slug ?? null);
+      })
       .catch((e) => {
         if ((e as Error).name !== "AbortError") setStudios([]);
       })
       .finally(() => setLoading(false));
     return () => ctrl.abort();
-  }, [selected, loc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, loc, fill.join(",")]);
 
   function pickMyLocation() {
     setLocError(null);
@@ -133,42 +152,53 @@ export default function PlaceCTA({
         )}
       </div>
 
-      <div className="studio-list" aria-busy={loading}>
-        {loading && !studios && <p className="muted">스튜디오 찾는 중…</p>}
-        {studios && studios.length === 0 && !loading && (
-          <p className="muted" style={{ margin: 0 }}>
-            {loc.label} 근처엔 아직 {selected} 스튜디오가 없어요. 다른 지역이나
-            운동을 골라보세요.
-          </p>
-        )}
-        {studios?.map((s) => (
-          <a
-            key={s.slug}
-            className="studio-card"
-            href={obudPlaceUrl(OBUD_URL, s.slug)}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {s.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={s.image} alt="" loading="lazy" />
-            ) : (
-              <div className="studio-noimg" aria-hidden />
-            )}
-            <div className="studio-info">
-              <div className="studio-title">{s.title}</div>
-              <div className="muted studio-meta">
-                {s.region}
-                {s.reviewAverage ? ` · ★ ${s.reviewAverage.toFixed(1)}` : ""}
-                {s.reviewCount ? ` (${s.reviewCount})` : ""}
+      {fill.length > 0 && (
+        <p className="muted" style={{ fontSize: 13, margin: "0 0 10px" }}>
+          {fill.map((o) => `${o}(${OHAENG_LABEL[o]})`).join(" · ")} 기운이 부족해서{" "}
+          {fill
+            .map((o) => districtsOf(o).slice(0, 4).join("·"))
+            .join(" / ")}
+          {fill.includes("수") && ", 한강·호수 근처"}
+          {fill.includes("목") && ", 공원·숲 근처"} 스튜디오를 먼저 골랐어요.
+        </p>
+      )}
+
+      {mapOk ? (
+        <div className="studio-map-wrap" aria-busy={loading}>
+          <StudioMap
+            center={loc}
+            studios={studios ?? []}
+            selected={picked}
+            onSelect={onSelect}
+            onUnavailable={onMapUnavailable}
+          />
+          {(() => {
+            const s = studios?.find((x) => x.slug === picked);
+            if (!s) return null;
+            return (
+              <div className="studio-map-card">
+                <StudioCard s={s} />
               </div>
-              <div className="muted studio-meta">
-                {s.categories.slice(0, 3).join(" · ")}
-              </div>
+            );
+          })()}
+          {studios && studios.length === 0 && !loading && (
+            <div className="studio-map-empty">
+              {loc.label} 근처엔 아직 {selected} 스튜디오가 없어요.
             </div>
-          </a>
-        ))}
-      </div>
+          )}
+        </div>
+      ) : (
+        <div className="studio-list" aria-busy={loading}>
+          {loading && !studios && <p className="muted">스튜디오 찾는 중…</p>}
+          {studios && studios.length === 0 && !loading && (
+            <p className="muted" style={{ margin: 0 }}>
+              {loc.label} 근처엔 아직 {selected} 스튜디오가 없어요. 다른 지역이나
+              운동을 골라보세요.
+            </p>
+          )}
+          {studios?.slice(0, 3).map((s) => <StudioCard key={s.slug} s={s} />)}
+        </div>
+      )}
 
       <div className="stack" style={{ marginTop: 12 }}>
         <button
@@ -183,5 +213,40 @@ export default function PlaceCTA({
         오붓패스 하나로 여러 스튜디오를 번갈아 다녀볼 수도 있어요.
       </p>
     </div>
+  );
+}
+
+/** 스튜디오 카드 — 오붓 지도 하단 카드 스타일 (사진 · 이름 · 별점 · 지역 · 카테고리) */
+function StudioCard({ s }: { s: Studio }) {
+  return (
+    <a
+      className="studio-card"
+      href={obudPlaceUrl(OBUD_URL, s.slug)}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <div className="studio-thumb">
+        {s.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={s.image} alt="" loading="lazy" />
+        ) : (
+          <div className="studio-noimg" aria-hidden />
+        )}
+        {s.passType && <span className="studio-pass">PASS</span>}
+      </div>
+      <div className="studio-info">
+        <div className="studio-title">{s.title}</div>
+        <div className="muted studio-meta">
+          {s.reviewAverage ? (
+            <>
+              <span style={{ color: "var(--gold)" }}>★</span> {s.reviewAverage.toFixed(1)}
+              {s.reviewCount ? ` (${s.reviewCount})` : ""} ·{" "}
+            </>
+          ) : null}
+          {s.region} · {s.categories.slice(0, 3).join(", ")}
+        </div>
+        {s.ohaengReason && <div className="studio-ohaeng">{s.ohaengReason}</div>}
+      </div>
+    </a>
   );
 }

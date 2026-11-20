@@ -34,6 +34,12 @@ export type Studio = {
   reviewAverage: number | null;
   reviewCount: number;
   categories: string[];
+  lat: number;
+  lng: number;
+  /** 오붓패스 사용 가능 지역 (없으면 null) */
+  passType: string | null;
+  /** 부족한 오행(수·목)을 위치로 채워주는 경우 그 이유 (예: "한강에서 300m · 물 기운을 채워줘요") */
+  ohaengReason: string | null;
 };
 
 /** 오붓 장소 페이지 링크 (+ 오붓도비 UTM) */

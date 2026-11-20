@@ -316,7 +316,7 @@ export default function ResultView({
             </Locked>
           </div>
         ) : (
-          <PlaceCTA recommendations={recos} />
+          <PlaceCTA recommendations={recos} fill={targets} />
         ))}
 
       {/* ===== 공유 카드 + 액션 (잠금 해제 후 — 1위 운동이 들어가므로) ===== */}

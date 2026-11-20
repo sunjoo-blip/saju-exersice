@@ -512,7 +512,11 @@ body {
 .studio-card:hover {
   border-color: var(--gold);
 }
-.studio-card img,
+.studio-thumb {
+  position: relative;
+  flex: none;
+}
+.studio-thumb img,
 .studio-noimg {
   width: 72px;
   height: 72px;
@@ -535,4 +539,62 @@ body {
 }
 .studio-meta {
   font-size: 12px;
+}
+
+.studio-pass {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #2f8a5b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+.studio-ohaeng {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ohaeng-su);
+}
+/* 지도 + 하단 카드 (오붓 지도 UI 참고) */
+.studio-map-wrap {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.studio-map {
+  width: 100%;
+  height: 340px;
+  background: #1a2720;
+}
+.studio-map-card {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+}
+.studio-map-card .studio-card {
+  background: #ffffff;
+  color: #141414;
+  border: 0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+.studio-map-card .muted {
+  color: #5a5a5a;
+}
+.studio-map-card .studio-ohaeng {
+  color: #2f5fa8;
+}
+.studio-map-empty {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(16, 24, 15, 0.9);
+  font-size: 13px;
 }
