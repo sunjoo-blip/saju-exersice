@@ -14,6 +14,10 @@ export { ALLOWED_EXERCISES };
 export const recommendationSchema = z.object({
   /** 운동 팔자 유형명 (예: "역마의 질주러") */
   typeName: z.string().min(1).max(30),
+  /** 결과지 인트로 멘트 — "앞으로 이런 걸 알려줄게요" (결과지 맨 앞) */
+  intro: z.string().min(1).max(200),
+  /** 일간 캐릭터 (서버가 60일주 표로 채움) */
+  character: z.string().optional(),
   /** 한 줄 요약 */
   oneLiner: z.string().min(1).max(80),
   /** 주요 사주 요소 및 신살 해석 */

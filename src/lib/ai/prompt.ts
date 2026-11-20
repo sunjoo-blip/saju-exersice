@@ -14,6 +14,7 @@ import {
   SINSAL_HINT,
 } from "../exercise/catalog";
 import { fillTargets } from "../exercise/pick";
+import { iljuType } from "../saju/iljuTypes";
 
 /** 추천 가능한 운동 목록 (프롬프트 주입용 문자열) */
 const ALLOWED_EXERCISES_LINE = ALLOWED_EXERCISES.join(", ");
@@ -94,12 +95,24 @@ export const SYSTEM_PROMPT = `당신은 "운동팔자" 서비스의 콘텐츠 �
 
 export function buildUserPrompt(saju: SajuResult, nickname?: string): string {
   const who = nickname ? `사용자 닉네임: ${nickname}` : "사용자 닉네임: (없음)";
+  const t = iljuType(saju.pillars.day.gan, saju.pillars.day.jiji);
+  const fixed = t
+    ? `
+## 이 일주의 고정 타입 (60일주 표 — 반드시 그대로 사용)
+- typeName: "${t.typeName}" (글자 그대로)
+- oneLiner: "${t.hook}" (글자 그대로)
+- 캐릭터: ${t.character}
+- recommendations 의 첫 번째(1위)는 반드시 "${t.exercise}". 나머지 2개는 다른 운동으로.
+- intro, tendency 등 다른 문장도 이 유형명·한 줄과 어울리는 톤으로 쓸 것
+`
+    : "";
   return `${who}
 
 ${serializeFacts(saju)}
-
+${fixed}
 위 사실을 바탕으로 "운동팔자" 결과를 생성하세요.
 - typeName: 위트있는 운동 성향 유형명 (예: "역마의 질주러", "화개의 몰입러")
+- intro: 결과지 맨 앞에 나오는 인트로 멘트 1~2문장. 이 사람의 사주에서 눈에 띄는 점 하나로 궁금증을 만들고, 이어서 "잘 맞는 운동 TOP3, 운동 성향, 꾸준히 하는 팁, 부족한 기운"을 알려주겠다는 흐름으로 (목록을 그대로 나열하지 말고 자연스럽게)
 - oneLiner: 한 줄 요약
 - sajuInterpretation: 일간/오행 분포/판정된 신살을 근거로 한 해석 (없는 신살은 언급 금지)
 - tendency: 운동 성향 해석

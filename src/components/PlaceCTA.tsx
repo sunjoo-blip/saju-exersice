@@ -27,7 +27,7 @@ export default function PlaceCTA({
 
   return (
     <div className="card">
-      <p className="section-label">어디서 해볼까?</p>
+      <p className="section-label">오붓 맞춤 스튜디오</p>
       <p className="sub" style={{ marginTop: 0 }}>
         오붓 지도에서 내 주변 스튜디오를 바로 찾아보세요.
       </p>

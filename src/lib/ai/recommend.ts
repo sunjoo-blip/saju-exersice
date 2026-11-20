@@ -7,6 +7,7 @@ import OpenAI from "openai";
 import { recommendationSchema, type Recommendation } from "./schema";
 import { SYSTEM_PROMPT, buildUserPrompt } from "./prompt";
 import type { SajuResult } from "../saju/types";
+import { iljuType } from "../saju/iljuTypes";
 
 /**
  * gpt-5 / o 계열은 추론 모델이라 기본 설정이면 응답이 20초 이상 걸립니다.
@@ -98,5 +99,34 @@ export async function generateRecommendation(
     );
   }
 
-  return result.data;
+  return applyIljuType(result.data, saju);
+}
+
+/**
+ * 60일주 표의 고정값을 덮어씀 — AI 가 프롬프트를 어겨도 같은 일주면 항상 같은
+ * 유형명·한 줄·캐릭터·1위 운동이 나오도록.
+ */
+function applyIljuType(rec: Recommendation, saju: SajuResult): Recommendation {
+  const t = iljuType(saju.pillars.day.gan, saju.pillars.day.jiji);
+  if (!t) return rec;
+  const recos = [...rec.recommendations];
+  const idx = recos.findIndex((r) => r.name === t.exercise);
+  if (idx > 0) {
+    const [top] = recos.splice(idx, 1);
+    recos.unshift(top);
+  } else if (idx === -1) {
+    // AI 가 1위 운동을 빠뜨린 경우: 3위를 빼고 1위로 넣음
+    recos.pop();
+    recos.unshift({
+      name: t.exercise,
+      reason: `${t.typeName}에게 가장 잘 맞는 운동이에요. ${t.hook}.`,
+    });
+  }
+  return {
+    ...rec,
+    typeName: t.typeName,
+    oneLiner: t.hook,
+    character: t.character,
+    recommendations: recos,
+  };
 }

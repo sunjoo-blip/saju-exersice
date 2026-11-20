@@ -106,8 +106,18 @@ export const SINSAL_HINT: Record<string, string> = {
   백호살: "강렬하게 발산하는 운동",
 };
 
+/**
+ * 오붓 지도 링크 + UTM (오붓도비 캠페인).
+ * utm_content = "cat_" + 카테고리 ID 목록 (예: 단일 "cat_1", 추천 3개 "cat_1_2_4")
+ * → GA4 에서 어떤 추천 결과로 넘어왔는지 구분. 값은 소문자/숫자/_ 만 사용.
+ */
 export function obudDiscoverUrl(base: string, exercises: Exercise[]): string {
   const params = new URLSearchParams();
-  for (const e of exercises) params.append("categoryIds", String(OBUD_CATEGORY_ID[e]));
+  const ids = exercises.map((e) => OBUD_CATEGORY_ID[e]);
+  for (const id of ids) params.append("categoryIds", String(id));
+  params.set("utm_source", "saju_exercise");
+  params.set("utm_medium", "referral");
+  params.set("utm_campaign", "obud_dobby");
+  params.set("utm_content", `cat_${ids.join("_")}`);
   return `${base.replace(/\/$/, "")}/discover?${params.toString()}`;
 }

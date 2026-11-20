@@ -412,3 +412,80 @@ body {
   opacity: 0.4;
   cursor: default;
 }
+
+/* ===== 결과지 인트로 / 카운트다운 / 사주 자세히 ===== */
+.intro-card .share-type {
+  margin: 6px 0 4px;
+}
+.intro-agenda {
+  margin: 14px 0 0;
+  padding: 12px 12px 12px 30px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-dim);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.reco-top .reco-rank {
+  color: var(--gold-soft);
+  font-weight: 700;
+  font-size: 28px;
+}
+.reco-top .reco-name {
+  color: var(--gold-soft);
+}
+.saju-details summary {
+  cursor: pointer;
+  list-style: none;
+  margin: 0;
+}
+.saju-details summary::-webkit-details-marker {
+  display: none;
+}
+.saju-details summary::after {
+  content: " ▾";
+}
+.saju-details[open] summary::after {
+  content: " ▴";
+}
+
+/* ===== 블러 게이트 ===== */
+.locked-blur {
+  filter: blur(6px);
+  user-select: none;
+  pointer-events: none;
+}
+.gate-wrap {
+  position: relative;
+}
+.gate-card {
+  margin-top: 14px;
+  background: #f7f4ec;
+  color: #141414;
+  border-radius: 20px;
+  padding: 18px 16px;
+  text-align: center;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+.gate-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+.gate-sub {
+  margin: 8px 0 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #4a4a4a;
+}
+.btn-kakao {
+  background: #fee500;
+  color: #191919;
+  font-weight: 700;
+}
+
+.intro-character {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
