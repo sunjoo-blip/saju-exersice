@@ -94,16 +94,18 @@ export default function PlaceCTA({
   if (!selected) return null;
 
   const chip = (active: boolean) => ({
-    borderColor: active ? "var(--gold)" : "rgba(255,255,255,0.16)",
-    background: active ? "rgba(217,181,106,0.16)" : "rgba(255,255,255,0.04)",
-    color: active ? "var(--gold-soft)" : "var(--ink)",
+    borderColor: active ? "var(--ink)" : "var(--line)",
+    background: active ? "var(--ink)" : "var(--paper)",
+    color: active ? "var(--paper)" : "var(--ink)",
     width: "auto",
     flex: "0 0 auto",
   });
 
   return (
     <div className="card">
-      <p className="section-label">오붓 맞춤 스튜디오</p>
+      <p className="section-label">
+        <span className="sec-num">05</span>오붓 맞춤 스튜디오
+      </p>
 
       <div className="field">
         <label>운동</label>
@@ -239,7 +241,7 @@ function StudioCard({ s }: { s: Studio }) {
         <div className="muted studio-meta">
           {s.reviewAverage ? (
             <>
-              <span style={{ color: "var(--gold)" }}>★</span> {s.reviewAverage.toFixed(1)}
+              <span style={{ color: "#f2b400" }}>★</span> {s.reviewAverage.toFixed(1)}
               {s.reviewCount ? ` (${s.reviewCount})` : ""} ·{" "}
             </>
           ) : null}

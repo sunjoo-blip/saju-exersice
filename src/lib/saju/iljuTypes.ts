@@ -88,3 +88,8 @@ export const ILJU_TYPES: Record<string, IljuType> = {
 export function iljuType(gan: string, jiji: string): IljuType | undefined {
   return ILJU_TYPES[`${gan}${jiji}`];
 }
+
+/** 60갑자 순번 (갑자=1 … 계해=60) — 페르소나 카드 번호 */
+export function iljuNumber(ilju: string): number {
+  return Object.keys(ILJU_TYPES).indexOf(ilju) + 1;
+}

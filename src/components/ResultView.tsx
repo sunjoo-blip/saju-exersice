@@ -9,6 +9,7 @@ import { EXERCISE_EMOJI, OHAENG_FILL_HINT } from "@/lib/exercise/catalog";
 import OhaengBars from "./OhaengBars";
 import PlaceCTA from "./PlaceCTA";
 import Character from "./Character";
+import { iljuNumber } from "@/lib/saju/iljuTypes";
 
 /** 공유 링크 — 환경변수가 없으면 현재 접속 도메인 사용 (localhost 링크가 공유되던 문제 방지) */
 function siteUrl(): string {
@@ -36,6 +37,26 @@ function Locked({
   return (
     <p className="locked-blur" aria-hidden>
       {placeholder}
+    </p>
+  );
+}
+
+const OHAENG_WORD: Record<Ohaeng, string> = { 목: "나무", 화: "불", 토: "흙", 금: "쇠", 수: "물" };
+const OHAENG_DOT: Record<Ohaeng, string> = {
+  목: "#6f9e6a",
+  화: "#d9794a",
+  토: "#c9a24a",
+  금: "#9a9a92",
+  수: "#5f86bf",
+};
+
+/** 섹션 머리: 01 나랑 잘 맞는 운동 TOP 3 */
+function SecHead({ num, label, locked }: { num: string; label: string; locked?: boolean }) {
+  return (
+    <p className="section-label">
+      <span className="sec-num">{num}</span>
+      {label}
+      {locked && <span className="sec-lock">🔒 로그인 후 공개</span>}
     </p>
   );
 }
@@ -151,6 +172,15 @@ export default function ResultView({
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
+  // 페르소나 카드 정보
+  const day = saju.pillars.day;
+  const ilju = `${day.gan}${day.jiji}`;
+  const personaNo = iljuNumber(ilju);
+  const ganO = day.ganOhaeng as Ohaeng;
+  const jiO = day.jijiOhaeng as Ohaeng;
+  const [ganH = "", jiH = ""] = Array.from(day.ganjiHanja);
+  const whyText = `${day.gan}${ganO}(${ganH})의 ${OHAENG_WORD[ganO]} 기운 + ${day.jiji}${jiO}(${jiH})의 ${OHAENG_WORD[jiO]} 기운`;
+
   // 카운트다운 순서: 3위 → 2위 → 1위 (AI 응답은 1위부터 오므로 뒤집어서 표시)
   const countdown = recos.map((r, i) => ({ ...r, rank: i + 1 })).reverse();
   // 블러 게이트: 3위만 공개, 2위·1위와 이후 섹션은 잠금 해제 후 공개
@@ -172,27 +202,48 @@ export default function ResultView({
         </div>
       )}
 
-      {/* ===== 1. 인트로 멘트 ===== */}
-      <div className="card intro-card">
-        {rec?.character && (
-          <div className="intro-character">
-            <Character name={rec.character} size={220} />
-          </div>
-        )}
-        <p className="muted" style={{ fontSize: 13, margin: 0 }}>
-          나의 운동 팔자는
-        </p>
+      {/* ===== 1. 인트로 — 페르소나 카드 ===== */}
+      <div className="persona">
+        <div className="persona-top">
+          <b>OBUD · 운동팔자</b>
+          <span>PERSONA NO.{String(personaNo).padStart(2, "0")}</span>
+        </div>
+        <div className="persona-tag">
+          <i style={{ background: OHAENG_DOT[ganO] }} />
+          {ilju}일주{recos[0] ? ` · ${recos[0].name}` : ""}
+        </div>
         {rec ? (
           <>
-            <div className="share-type">{rec.typeName}</div>
-            <p className="serif" style={{ fontSize: 18, lineHeight: 1.5 }}>
-              “{rec.oneLiner}”
-            </p>
-            <p style={{ marginBottom: 0 }}>{rec.intro}</p>
+            <p className="persona-title">{rec.typeName}</p>
+            <p className="persona-sub">{rec.oneLiner}</p>
           </>
+        ) : (
+          !recError && (
+            <div style={{ marginTop: 12 }}>
+              <Skeleton lines={2} />
+            </div>
+          )
+        )}
+        {rec?.character && (
+          <div className="persona-art">
+            <Character name={rec.character} size={280} />
+          </div>
+        )}
+        <div className="persona-why">
+          <span className="num" style={{ color: "#9cc0ec" }}>Why?</span>
+          {whyText}
+        </div>
+      </div>
+
+      <div className="card intro-card">
+        {rec ? (
+          <p style={{ margin: 0, lineHeight: 1.75 }}>{rec.intro}</p>
         ) : (
           !recError && <Skeleton lines={3} />
         )}
+        <p className="muted" style={{ fontSize: 12, letterSpacing: "0.14em", margin: "14px 0 0" }}>
+          지금부터 알려줄게요
+        </p>
         <ol className="intro-agenda">
           <li>나랑 잘 맞는 운동 TOP 3</li>
           <li>나의 운동 성향</li>
@@ -203,15 +254,15 @@ export default function ResultView({
       </div>
 
       {/* ===== 2. 잘 맞는 운동 TOP 3 (3위 → 1위 카운트다운, 2·1위 잠금) ===== */}
-      <div className="card">
-        <p className="section-label">나랑 잘 맞는 운동 TOP 3</p>
+      <section className="sec">
+        <SecHead num="01" label="나랑 잘 맞는 운동 TOP 3" />
         {rec ? (
           <div className="gate-wrap">
             {countdown.map((r) => {
               const hidden = locked && r.rank !== 3;
               return (
                 <div
-                  className={`reco${r.rank === 1 ? " reco-top" : ""}`}
+                  className={`reco${r.rank === 1 && !hidden ? " reco-top" : ""}${hidden ? " reco-locked" : ""}`}
                   key={r.name}
                 >
                   <div className="reco-rank">{r.rank}</div>
@@ -221,7 +272,7 @@ export default function ResultView({
                     aria-hidden={hidden || undefined}
                   >
                     <div className="reco-name">
-                      {hidden ? "🔒 ???" : `${EXERCISE_EMOJI[r.name]} ${r.name}`}
+                      {hidden ? "???" : `${EXERCISE_EMOJI[r.name]} ${r.name}`}
                     </div>
                     <div className="reco-reason">
                       {hidden ? "로그인하면 공개되는 추천 이유예요." : r.reason}
@@ -232,11 +283,9 @@ export default function ResultView({
             })}
             {locked && (
               <div className="gate-card">
-                <p className="gate-title serif">진짜 찰떡은 아직이야.</p>
+                <p className="gate-title">진짜 찰떡은 아직이야.</p>
                 <p className="gate-sub">
-                  2위·1위와 운동 성향, 팁, 부족한 기운까지
-                  <br />
-                  전체 결과를 볼 수 있어요
+                  2위·1위, 운동 성향, 꾸준히 하는 팁, 부족한 기운, 맞춤 스튜디오까지 전부 열려요.
                 </p>
                 <button type="button" className="btn btn-kakao" onClick={unlock}>
                   카카오로 3초 만에 1위 보기
@@ -255,66 +304,66 @@ export default function ResultView({
             </div>
           ))
         )}
-      </div>
+      </section>
 
       {/* ===== 3. 나의 운동 성향 ===== */}
-      <div className="card">
-        <p className="section-label">나의 운동 성향</p>
+      <section className="sec">
+        <SecHead num="02" label="나의 운동 성향" locked={locked} />
         {rec ? (
           <Locked locked={locked} placeholder="시작 버튼을 누르기까지 오래 걸리는 타입이에요. 대신 루틴이 되면…">
-            <p>{rec.tendency}</p>
+            <p className="sec-quote">{rec.tendency}</p>
           </Locked>
         ) : (
           !recError && <Skeleton lines={3} />
         )}
-      </div>
+      </section>
 
       {/* ===== 4. 꾸준히 하는 팁 ===== */}
-      <div className="card">
-        <p className="section-label">꾸준히 하는 팁</p>
+      <section className="sec">
+        <SecHead num="03" label="꾸준히 하는 팁" locked={locked} />
         {rec ? (
           <Locked locked={locked} placeholder="처음 2주는 같은 요일, 같은 시간에만. 그리고…">
-            <ul style={{ margin: 0, paddingLeft: 18 }}>
+            <ul className="tip-list">
               {rec.tips.map((t, i) => (
-                <li key={i} style={{ marginBottom: 6 }}>
-                  {t}
-                </li>
+                <li key={i}>{t}</li>
               ))}
             </ul>
           </Locked>
         ) : (
           !recError && <Skeleton lines={3} />
         )}
-      </div>
+      </section>
 
       {/* ===== 5. 내게 부족한 기운 (오행) ===== */}
-      <div className="card">
-        <p className="section-label">내게 부족한 기운</p>
+      <section className="sec">
+        <SecHead num="04" label="내게 부족한 기운" locked={locked} />
         <Locked locked={locked} placeholder="내 사주에 비어 있는 기운과, 그걸 채우는 운동이에요.">
-          <p style={{ marginTop: 0 }}>
-            {targets.map((o) => `${o}(${OHAENG_META[o].hanja})`).join(" · ")} 기운이{" "}
-            {isMissing ? "비어 있어요" : "가장 약해요"}.
-          </p>
-          <OhaengBars counts={saju.ohaeng.counts} total={saju.ohaeng.total} />
-          <ul style={{ margin: "12px 0 0", paddingLeft: 18 }} className="muted">
-            {targets.map((o) => (
-              <li key={o} style={{ marginBottom: 4 }}>
-                {o}: {OHAENG_FILL_HINT[o]} 운동으로 채워보세요
-              </li>
-            ))}
-          </ul>
+          <div className="card" style={{ margin: 0 }}>
+            <p style={{ marginTop: 0 }}>
+              {targets.map((o) => `${o}(${OHAENG_META[o].hanja})`).join(" · ")} 기운이{" "}
+              {isMissing ? "비어 있어요" : "가장 약해요"}.
+            </p>
+            <OhaengBars counts={saju.ohaeng.counts} total={saju.ohaeng.total} />
+            <ul style={{ margin: "12px 0 0", paddingLeft: 18 }} className="muted">
+              {targets.map((o) => (
+                <li key={o} style={{ marginBottom: 4 }}>
+                  {o}: {OHAENG_FILL_HINT[o]} 운동으로 채워보세요
+                </li>
+              ))}
+            </ul>
+          </div>
         </Locked>
-      </div>
+      </section>
 
       {/* ===== 6. 오붓 맞춤 스튜디오 ===== */}
       {rec &&
         (locked ? (
-          <div className="card">
-            <p className="section-label">오붓 맞춤 스튜디오</p>
+          <section className="sec">
+            <SecHead num="05" label="오붓 맞춤 스튜디오" locked />
             <Locked locked placeholder="내 동네에서 부족한 기운을 채울 수 있는 스튜디오예요.">
               {null}
             </Locked>
-          </div>
+          </section>
         ) : (
           <PlaceCTA recommendations={recos} fill={targets} />
         ))}
@@ -322,52 +371,33 @@ export default function ResultView({
       {/* ===== 공유 카드 + 액션 (잠금 해제 후 — 1위 운동이 들어가므로) ===== */}
       {!locked && (
         <>
-          <div ref={cardRef} className="share-card" style={{ marginTop: 16 }}>
-            <div>
-              <div className="brand">운동팔자</div>
-              <p className="muted" style={{ fontSize: 13, marginTop: 14 }}>
-                나의 운동 팔자는
-              </p>
-              {rec ? (
-                <div className="share-type">{rec.typeName}</div>
-              ) : (
-                <Skeleton lines={1} />
-              )}
+          <div ref={cardRef} className="persona share-persona">
+            <div className="persona-top">
+              <b>OBUD · 운동팔자</b>
+              <span>PERSONA NO.{String(personaNo).padStart(2, "0")}</span>
             </div>
-            {rec?.character ? (
-              <div className="intro-character">
-                <Character name={rec.character} size={180} />
-              </div>
-            ) : (
-              <div className="share-emoji" aria-hidden>
-                {recos.map((r) => (
-                  <span key={r.name}>{EXERCISE_EMOJI[r.name]}</span>
-                ))}
+            <div className="persona-tag">
+              <i style={{ background: OHAENG_DOT[ganO] }} />
+              {ilju}일주{recos[0] ? ` · ${recos[0].name}` : ""}
+            </div>
+            {rec && (
+              <>
+                <p className="persona-title">{rec.typeName}</p>
+                <p className="persona-sub">{rec.oneLiner}</p>
+              </>
+            )}
+            {rec?.character && (
+              <div className="persona-art">
+                <Character name={rec.character} size={240} animated={false} />
               </div>
             )}
-            {rec ? (
-              <p className="serif" style={{ fontSize: 18, lineHeight: 1.5 }}>
-                “{rec.oneLiner}”
-              </p>
-            ) : (
-              <p className="muted">사주를 해석하는 중…</p>
-            )}
-            <div>
-              <p className="muted" style={{ fontSize: 12, marginBottom: 6 }}>
-                추천 운동
-              </p>
-              <div className="chips">
-                {rec ? (
-                  recos.map((r) => (
-                    <span className="chip" key={r.name}>
-                      {r.name}
-                    </span>
-                  ))
-                ) : (
-                  <Skeleton lines={1} />
-                )}
-              </div>
+            <div className="persona-why">
+              <span className="num" style={{ color: "#9cc0ec" }}>Why?</span>
+              {whyText}
             </div>
+            <p className="muted" style={{ textAlign: "center", fontSize: 11, letterSpacing: "0.2em", margin: "12px 0 0" }}>
+              나는 무슨 동물일까? · 운동팔자
+            </p>
           </div>
 
           <div className="stack" style={{ marginTop: 16 }}>

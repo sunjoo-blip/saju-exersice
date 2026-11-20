@@ -47,13 +47,13 @@ function escapeHtml(t: string) {
 }
 
 function pinHtml(title: string, active: boolean) {
-  const bg = active ? "#1f3a2b" : "#ffffff";
-  const fg = active ? "#ffffff" : "#1d2420";
-  const dot = active ? "#1f3a2b" : "#2f4a3a";
+  const bg = active ? "#2b2622" : "#fbf8f2";
+  const fg = active ? "#fbf8f2" : "#2b2622";
+  const dot = active ? "#2b2622" : "#fbf8f2";
   const label = escapeHtml(title.length > 12 ? `${title.slice(0, 12)}…` : title);
   return `<div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);cursor:pointer">
-    <div style="width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${dot};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>
-    <div style="margin-top:4px;padding:3px 8px;border-radius:8px;background:${bg};color:${fg};font:700 12px/1.3 'Noto Sans KR',sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.25)">${label}</div>
+    <div style="width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${dot};border:2px solid #2b2622"></div>
+    <div style="margin-top:4px;padding:3px 8px;border-radius:8px;background:${bg};color:${fg};font:700 12px/1.3 'Noto Sans KR',sans-serif;white-space:nowrap;border:1.5px solid #2b2622">${label}</div>
   </div>`;
 }
 
