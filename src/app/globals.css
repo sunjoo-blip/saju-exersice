@@ -489,3 +489,50 @@ body {
   justify-content: center;
   margin-bottom: 8px;
 }
+
+/* ===== 오붓 맞춤 스튜디오 카드 ===== */
+.studio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.studio-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  text-decoration: none;
+  min-height: 44px;
+}
+.studio-card:hover {
+  border-color: var(--gold);
+}
+.studio-card img,
+.studio-noimg {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  border-radius: 12px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+}
+.studio-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.studio-title {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.studio-meta {
+  font-size: 12px;
+}

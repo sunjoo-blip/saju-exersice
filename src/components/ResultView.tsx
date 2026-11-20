@@ -151,13 +151,6 @@ export default function ResultView({
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
-  const pillarList = [
-    { lbl: "년주", p: saju.pillars.year },
-    { lbl: "월주", p: saju.pillars.month },
-    { lbl: "일주", p: saju.pillars.day },
-    { lbl: "시주", p: saju.pillars.hour },
-  ];
-
   // 카운트다운 순서: 3위 → 2위 → 1위 (AI 응답은 1위부터 오므로 뒤집어서 표시)
   const countdown = recos.map((r, i) => ({ ...r, rank: i + 1 })).reverse();
   // 블러 게이트: 3위만 공개, 2위·1위와 이후 섹션은 잠금 해제 후 공개
@@ -403,45 +396,6 @@ export default function ResultView({
             </div>
           </div>
 
-          {/* ===== 사주 자세히 (접힘) — 원국 · 신살 · 해석 ===== */}
-          <details className="card saju-details">
-            <summary className="section-label">사주 자세히 보기</summary>
-            <div className="pillars" style={{ marginTop: 12 }}>
-              {pillarList.map(({ lbl, p }) => (
-                <div className="pillar" key={lbl}>
-                  <div className="lbl">{lbl}</div>
-                  {p ? (
-                    <>
-                      <div className="hanja">{p.ganjiHanja}</div>
-                      <div className="ko">
-                        {p.gan}
-                        {p.jiji}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="hanja">—</div>
-                      <div className="ko">모름</div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-            <p className="muted" style={{ fontSize: 13, marginTop: 12 }}>
-              일간(나): <b>{saju.ilgan.gan}</b> · 오행 {saju.ilgan.ohaeng}
-              {saju.hourUnknown && " · 출생시간 미입력으로 시주 제외"}
-            </p>
-            {saju.sinsal.length > 0 && (
-              <div className="chips" style={{ marginTop: 8 }}>
-                {saju.sinsal.map((s) => (
-                  <span className="chip" key={s.name}>
-                    {s.name} · {s.keyword}
-                  </span>
-                ))}
-              </div>
-            )}
-            {rec && <p style={{ marginBottom: 0 }}>{rec.sajuInterpretation}</p>}
-          </details>
         </>
       )}
 

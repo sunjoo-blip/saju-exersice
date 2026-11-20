@@ -21,7 +21,7 @@ export const recommendationSchema = z.object({
   /** 한 줄 요약 */
   oneLiner: z.string().min(1).max(80),
   /** 주요 사주 요소 및 신살 해석 */
-  sajuInterpretation: z.string().min(1).max(600),
+  sajuInterpretation: z.string().max(600).optional(),
   /** 운동 성향 해석 */
   tendency: z.string().min(1).max(400),
   /** 추천 운동 TOP 3 */

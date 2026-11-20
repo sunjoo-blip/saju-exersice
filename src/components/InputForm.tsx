@@ -86,8 +86,9 @@ export default function InputForm({ onSubmit, onBack, blockedMessage }: Props) {
       <p className="eyebrow">STEP 01</p>
       <h1 className="display">너의 사주를 알려줘</h1>
       <p className="sub">
-        태어난 날짜와 시간으로 운동 팔자를 봐 드릴게요. 입력한 정보는 결과 생성에만
-        쓰이고 따로 저장하지 않아요.
+        태어난 날짜와 시간으로 운동 팔자를 봐 드릴게요.
+        <br />
+        <strong>입력한 정보는 결과 생성에만 쓰이고 따로 저장하지 않아요.</strong>
       </p>
 
       <div className="card">
