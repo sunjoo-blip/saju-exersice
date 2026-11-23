@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Playfair+Display:ital,wght@1,600;1,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Playfair+Display:ital,wght@1,600;1,700&family=Nunito:wght@800&display=swap");
 /* 운동팔자 디자인 시스템
    신비로운 동양 명리학 분위기 + 차분하고 감각적인 에디토리얼 (명세 F1/F5) */
 
@@ -983,3 +983,32 @@ body {
 }
 .persona-art:has(.persona-bubble) { padding-top: 22px; }
 @keyframes pz-lockbob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -3px); } }
+
+.persona-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.08em;
+}
+.persona-brand img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: block;
+}
+.persona-top { align-items: center; }
+
+/* 오붓 워드마크 — 로고 글씨처럼 둥글고 자간 좁게 */
+.persona-wordmark {
+  font-family: "Nunito", "Noto Sans KR", sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  text-transform: lowercase;
+  line-height: 1;
+}
+.persona-brand-sub {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-left: -1px;
+}

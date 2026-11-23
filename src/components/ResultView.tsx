@@ -205,7 +205,12 @@ export default function ResultView({
       {/* ===== 1. 인트로 — 페르소나 카드 ===== */}
       <div className="persona">
         <div className="persona-top">
-          <b>OBUD · 운동팔자</b>
+          <b className="persona-brand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/obud-logo.png" alt="" width={22} height={22} />
+            <span className="persona-wordmark">obud</span>
+            <span className="persona-brand-sub">· 운동팔자</span>
+          </b>
           <span>PERSONA NO.{String(personaNo).padStart(2, "0")}</span>
         </div>
         <div className="persona-tag">
@@ -391,7 +396,12 @@ export default function ResultView({
         <>
           <div ref={cardRef} className="persona share-persona">
             <div className="persona-top">
-              <b>OBUD · 운동팔자</b>
+              <b className="persona-brand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/obud-logo.png" alt="" width={22} height={22} />
+            <span className="persona-wordmark">obud</span>
+            <span className="persona-brand-sub">· 운동팔자</span>
+          </b>
               <span>PERSONA NO.{String(personaNo).padStart(2, "0")}</span>
             </div>
             <div className="persona-tag">
