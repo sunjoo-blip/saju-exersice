@@ -210,7 +210,8 @@ export default function ResultView({
         </div>
         <div className="persona-tag">
           <i style={{ background: OHAENG_DOT[ganO] }} />
-          {ilju}일주{!locked && recos[0] ? ` · ${recos[0].name}` : ""}
+          {ilju}일주
+          {recos[0] && (locked ? <span className="persona-tag-lock"> · 🔒 ???</span> : ` · ${recos[0].name}`)}
         </div>
         {rec ? (
           <>
@@ -231,6 +232,19 @@ export default function ResultView({
               exercise={locked ? undefined : recos[0]?.name}
               size={280}
             />
+            {locked && (
+              <button
+                type="button"
+                className="persona-bubble"
+                onClick={() =>
+                  document.getElementById("gate")?.scrollIntoView({ behavior: "smooth", block: "center" })
+                }
+              >
+                나는 어떤 운동이 잘 맞을까?
+                <br />
+                <b>두근두근…</b>
+              </button>
+            )}
           </div>
         )}
         <div className="persona-why">
@@ -286,7 +300,7 @@ export default function ResultView({
               );
             })}
             {locked && (
-              <div className="gate-card">
+              <div className="gate-card" id="gate">
                 <p className="gate-title">진짜 찰떡은 아직이야.</p>
                 <p className="gate-sub">
                   2위·1위, 운동 성향, 꾸준히 하는 팁, 부족한 기운, 맞춤 스튜디오까지 전부 열려요.
