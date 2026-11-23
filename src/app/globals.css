@@ -1012,3 +1012,5 @@ body {
   letter-spacing: 0.04em;
   margin-left: -1px;
 }
+.persona-top .persona-wordmark { color: #34443a; }
+.persona-top .persona-brand-sub { color: var(--ink); }
