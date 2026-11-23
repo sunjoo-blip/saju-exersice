@@ -210,7 +210,7 @@ export default function ResultView({
         </div>
         <div className="persona-tag">
           <i style={{ background: OHAENG_DOT[ganO] }} />
-          {ilju}일주{recos[0] ? ` · ${recos[0].name}` : ""}
+          {ilju}일주{!locked && recos[0] ? ` · ${recos[0].name}` : ""}
         </div>
         {rec ? (
           <>
@@ -226,7 +226,11 @@ export default function ResultView({
         )}
         {rec?.character && (
           <div className="persona-art">
-            <Character name={rec.character} size={280} />
+            <Character
+              name={rec.character}
+              exercise={locked ? undefined : recos[0]?.name}
+              size={280}
+            />
           </div>
         )}
         <div className="persona-why">
@@ -388,7 +392,12 @@ export default function ResultView({
             )}
             {rec?.character && (
               <div className="persona-art">
-                <Character name={rec.character} size={240} animated={false} />
+                <Character
+                  name={rec.character}
+                  exercise={recos[0]?.name}
+                  size={240}
+                  animated={false}
+                />
               </div>
             )}
             <div className="persona-why">
