@@ -10,6 +10,7 @@ import type { Recommendation } from "@/lib/ai/schema";
 import { AREAS, obudPlaceUrl, type Studio } from "@/lib/studios/areas";
 import type { Ohaeng } from "@/lib/saju/constants";
 import StudioMap, { NAVER_MAP_ENABLED } from "./StudioMap";
+import SchematicMap from "./SchematicMap";
 import { districtsOf } from "@/lib/studios/ohaengPlaces";
 
 const OHAENG_LABEL: Record<Ohaeng, string> = { 목: "木", 화: "火", 토: "土", 금: "金", 수: "水" };
@@ -190,15 +191,27 @@ export default function PlaceCTA({
           )}
         </div>
       ) : (
-        <div className="studio-list" aria-busy={loading}>
-          {loading && !studios && <p className="muted">스튜디오 찾는 중…</p>}
+        <div className="studio-map-wrap" aria-busy={loading}>
+          <SchematicMap
+            studios={studios ?? []}
+            selected={picked}
+            onSelect={onSelect}
+          />
+          {(() => {
+            const s = studios?.find((x) => x.slug === picked);
+            if (!s) return null;
+            return (
+              <div className="studio-map-card">
+                <StudioCard s={s} />
+              </div>
+            );
+          })()}
           {studios && studios.length === 0 && !loading && (
-            <p className="muted" style={{ margin: 0 }}>
+            <div className="studio-map-empty">
               {loc.label} 근처엔 아직 {selected} 스튜디오가 없어요. 다른 지역이나
               운동을 골라보세요.
-            </p>
+            </div>
           )}
-          {studios?.slice(0, 3).map((s) => <StudioCard key={s.slug} s={s} />)}
         </div>
       )}
 
