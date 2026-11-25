@@ -14,18 +14,21 @@ import type { Studio } from "@/lib/studios/areas";
 import { HALF_LNG, project, sceneFor, type LngLat } from "@/lib/studios/geography";
 
 const MAX_PINS = 6;
-const X_MIN = 10;
-const X_MAX = 90;
+const X_MIN = 8;
+const X_MAX = 92;
 const Y_MIN = 9;
-const Y_MAX = 90;
+const Y_MAX = 54; // 이 아래는 하단 선택 카드 자리 — 핀/라벨이 카드를 덮지 않게
 const NEAR_X = 22; // 이만큼 가까우면(가로 %) 겹침으로 보고
-const MIN_DY = 13; // 세로로 최소 이만큼(%) 벌립니다
+const MIN_DY = 15; // 세로로 최소 이만큼(%) 벌립니다(라벨 높이보다 크게)
 
 type Placed = { s: Studio; x: number; y: number; active: boolean };
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-/** 핀들이 가로로 가까우면서 세로로 겹치면 아래로 밀어 읽히게 만듭니다. */
+/**
+ * 핀이 가로로 가까우면서 세로로 겹치면 아래로 밀어 읽히게 만들고,
+ * 덩어리가 카드 영역(Y_MAX)을 넘치면 통째로 위로 끌어올려 카드와 안 겹치게 합니다.
+ */
 function declutter(pins: Placed[]): Placed[] {
   const order = [...pins].sort((a, b) => a.y - b.y);
   for (let i = 1; i < order.length; i++) {
@@ -36,6 +39,8 @@ function declutter(pins: Placed[]): Placed[] {
       }
     }
   }
+  const maxY = order.reduce((m, p) => Math.max(m, p.y), 0);
+  if (maxY > Y_MAX) order.forEach((p) => (p.y -= maxY - Y_MAX));
   order.forEach((p) => (p.y = clamp(p.y, Y_MIN, Y_MAX)));
   return pins;
 }
@@ -85,8 +90,6 @@ export default function SchematicMap({
     return declutter(placed);
   }, [studios, selected, center.lat, center.lng]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  void HALF_LAT; // (투영에서 내부적으로 사용 — 참조 표시)
-
   return (
     <div className="studio-schematic" aria-label="스튜디오 위치 지도(모식)">
       <svg className="sm-geo" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
@@ -104,11 +107,13 @@ export default function SchematicMap({
       ))}
       {pins.map(({ s, x, y, active }) => {
         const label = s.title.length > 10 ? `${s.title.slice(0, 10)}…` : s.title;
+        // 가장자리 핀은 라벨을 안쪽으로 자라게 해 패널 밖으로 안 넘치게
+        const anchor = x < 30 ? " anchor-left" : x > 70 ? " anchor-right" : "";
         return (
           <button
             key={s.slug}
             type="button"
-            className={`sm-pin${active ? " active" : ""}`}
+            className={`sm-pin${active ? " active" : ""}${anchor}`}
             style={{ left: `${x}%`, top: `${y}%`, zIndex: active ? 10 : 2 }}
             onClick={() => onSelect(s.slug)}
             aria-pressed={active}

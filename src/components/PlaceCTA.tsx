@@ -193,6 +193,7 @@ export default function PlaceCTA({
       ) : (
         <div className="studio-map-wrap" aria-busy={loading}>
           <SchematicMap
+            center={loc}
             studios={studios ?? []}
             selected={picked}
             onSelect={onSelect}

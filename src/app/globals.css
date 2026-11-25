@@ -608,33 +608,35 @@ body {
   background: #eaf0e6;
   overflow: hidden;
 }
-/* 강(한강 느낌) — 대각선 파란 띠 */
-.sm-river {
+/* 지형(하천·해안) — 실제 좌표를 투영한 폴리라인 */
+.sm-geo {
   position: absolute;
-  left: -10%;
-  right: -10%;
-  top: 48%;
-  height: 20%;
-  background: #cfe0ee;
-  transform: rotate(-9deg);
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
-/* 공원·숲 블롭 */
+.sm-water {
+  fill: none;
+  stroke: #cfe0ee;
+  stroke-width: 24;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+/* 공원·숲 블롭 (중심 좌표 투영, 가로폭 기준 원형) */
 .sm-park {
   position: absolute;
-  right: 8%;
-  top: 10%;
-  width: 34%;
-  height: 34%;
-  border-radius: 46% 54% 48% 52% / 52% 46% 54% 48%;
+  aspect-ratio: 1;
+  border-radius: 50%;
   background: #d8e6cf;
+  transform: translate(-50%, -50%);
 }
+/* 핀: 점(dot)만 좌표에 고정하고, 라벨은 점 아래에 가장자리 인식으로 띄웁니다 */
 .sm-pin {
   position: absolute;
+  width: 22px;
+  height: 22px;
   transform: translate(-50%, -100%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
   padding: 0;
   background: none;
   border: 0;
@@ -642,14 +644,18 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .sm-pin-dot {
-  width: 22px;
-  height: 22px;
+  position: absolute;
+  inset: 0;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
   background: #fbf8f2;
   border: 2px solid #2b2622;
 }
 .sm-pin-label {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 3px 8px;
   border-radius: 8px;
   background: #fbf8f2;
@@ -657,6 +663,16 @@ body {
   font: 700 12px/1.3 "Noto Sans KR", sans-serif;
   white-space: nowrap;
   border: 1.5px solid #2b2622;
+}
+/* 왼쪽 가장자리 핀 → 라벨이 오른쪽으로, 오른쪽 가장자리 핀 → 왼쪽으로 자람 */
+.sm-pin.anchor-left .sm-pin-label {
+  left: 0;
+  transform: none;
+}
+.sm-pin.anchor-right .sm-pin-label {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 .sm-pin.active .sm-pin-dot {
   background: #2b2622;
