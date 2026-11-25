@@ -3,23 +3,29 @@
 /**
  * 스튜디오 모식(模式) 지도 — 실제 지도 API 없이 "지도 형태만" 차용한 폴백.
  * - 네이버 지도 키가 없거나 로드에 실패했을 때 밋밋한 목록 대신 사용합니다.
- * - 선택한 지역(center)을 화면 중앙에 두고, 그 동네의 실제 지형(한강·하천·공원)과
- *   스튜디오 핀을 "같은 투영"으로 찍습니다. → 강 근처 스튜디오는 그려진 강 근처에
- *   찍히고, 강이 없는 지역이면 강은 화면 밖으로 잘립니다. (geography.ts 참고)
- * - 핀이 겹치면 세로로 살짝 밀어내 읽히게 합니다(declutter).
+ * - 스튜디오 분포에 맞춰 뷰포트를 자동으로 맞추고(네이버 fitBounds 느낌),
+ *   그 동네의 실제 지형(한강·하천·공원)과 핀을 "같은 투영"으로 찍습니다.
+ *   → 강 근처 스튜디오는 그려진 강 근처에 찍히고, 멀면 지형은 화면 밖으로 잘립니다.
+ * - 핀이 겹치면 세로로 밀어내고(declutter), 카드 영역은 넘지 않게 합니다.
  */
 
 import { useMemo } from "react";
 import type { Studio } from "@/lib/studios/areas";
-import { HALF_LNG, project, sceneFor, type LngLat } from "@/lib/studios/geography";
+import {
+  makeViewport,
+  parkDiameterPct,
+  project,
+  sceneFor,
+  X_MIN,
+  X_MAX,
+  Y_MIN,
+  Y_MAX,
+  type LngLat,
+} from "@/lib/studios/geography";
 
-const MAX_PINS = 6;
-const X_MIN = 8;
-const X_MAX = 92;
-const Y_MIN = 9;
-const Y_MAX = 54; // 이 아래는 하단 선택 카드 자리 — 핀/라벨이 카드를 덮지 않게
-const NEAR_X = 22; // 이만큼 가까우면(가로 %) 겹침으로 보고
-const MIN_DY = 15; // 세로로 최소 이만큼(%) 벌립니다(라벨 높이보다 크게)
+const MAX_PINS = 5;
+const NEAR_X = 20; // 이만큼 가까우면(가로 %) 겹침으로 보고
+const MIN_DY = 14; // 세로로 최소 이만큼(%) 벌립니다(라벨 높이보다 크게)
 
 type Placed = { s: Studio; x: number; y: number; active: boolean };
 
@@ -56,30 +62,28 @@ export default function SchematicMap({
   selected: string | null;
   onSelect: (slug: string) => void;
 }) {
+  const shown = useMemo(() => studios.slice(0, MAX_PINS), [studios]);
+  const vp = useMemo(() => makeViewport(center, shown), [center.lat, center.lng, shown]); // eslint-disable-line react-hooks/exhaustive-deps
   const scene = useMemo(() => sceneFor(center), [center.lat, center.lng]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 지형(강·하천·공원)을 패널 % 좌표로 투영
+  // 지형(강·하천·공원)을 같은 뷰포트로 투영
   const water = useMemo(
     () =>
       scene.water.map((line) =>
-        line.map((p) => project(center, p)).map((q) => `${q.x},${q.y}`).join(" "),
+        line.map((p) => project(vp, p)).map((q) => `${q.x},${q.y}`).join(" "),
       ),
-    [scene, center.lat, center.lng], // eslint-disable-line react-hooks/exhaustive-deps
+    [scene, vp],
   );
   const parks = useMemo(
     () =>
-      scene.parks.map((p) => {
-        const c = project(center, p);
-        const d = (p.r / HALF_LNG) * 50 * 2; // 지름(패널 가로 %)
-        return { ...c, d };
-      }),
-    [scene, center.lat, center.lng], // eslint-disable-line react-hooks/exhaustive-deps
+      scene.parks.map((p) => ({ ...project(vp, p), d: parkDiameterPct(vp, p.r) })),
+    [scene, vp],
   );
 
   // 스튜디오 핀 투영 + 겹침 정리
   const pins = useMemo(() => {
-    const placed: Placed[] = studios.slice(0, MAX_PINS).map((s) => {
-      const p = project(center, s);
+    const placed: Placed[] = shown.map((s) => {
+      const p = project(vp, s);
       return {
         s,
         x: clamp(p.x, X_MIN, X_MAX),
@@ -88,7 +92,7 @@ export default function SchematicMap({
       };
     });
     return declutter(placed);
-  }, [studios, selected, center.lat, center.lng]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shown, selected, vp]);
 
   return (
     <div className="studio-schematic" aria-label="스튜디오 위치 지도(모식)">

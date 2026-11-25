@@ -12,16 +12,59 @@ export type Park = LngLat & { r: number };
 /** 한 지역 뷰포트에서 보여줄 지형 세트 */
 export type Scene = { water: LngLat[][]; parks: Park[] };
 
-/* 뷰포트 반경(도). 스튜디오 검색 박스(≈4~5km)보다 살짝 넓게 잡아 여백을 둡니다. */
-export const HALF_LAT = 0.05;
-export const HALF_LNG = 0.062;
+/** 핀이 놓이는 "사용 영역" (아래쪽 Y_MAX 밑은 하단 선택 카드 자리) */
+export const X_MIN = 8;
+export const X_MAX = 92;
+export const Y_MIN = 9;
+export const Y_MAX = 55;
 
-/** center 를 화면 가운데로 두고 좌표를 패널 내부 %(0~100) 로 투영 (북쪽이 위) */
-export function project(center: LngLat, p: LngLat): { x: number; y: number } {
+export type Viewport = { lat: number; lng: number; halfLat: number; halfLng: number };
+
+const PAD = 1.35; // 스튜디오 바운즈 바깥 여백 배수
+const MIN_HALF_LAT = 0.006; // 너무 확대되지 않게(≈0.7km)
+const MAX_HALF_LAT = 0.07; // 너무 축소되지 않게
+const MIN_HALF_LNG = 0.0075;
+const MAX_HALF_LNG = 0.088;
+const clampN = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/**
+ * 스튜디오 분포에 맞춰 뷰포트를 자동으로 맞춥니다(네이버 fitBounds 느낌).
+ * - 몰려 있으면 확대해 패널을 채우고, 넓게 퍼져 있으면 축소합니다.
+ * - 스튜디오가 없으면 지역 중심 기준 기본 줌.
+ */
+export function makeViewport(center: LngLat, pts: LngLat[]): Viewport {
+  if (pts.length === 0) {
+    return { lat: center.lat, lng: center.lng, halfLat: 0.05, halfLng: 0.062 };
+  }
+  let minLat = Infinity,
+    maxLat = -Infinity,
+    minLng = Infinity,
+    maxLng = -Infinity;
+  for (const p of pts) {
+    minLat = Math.min(minLat, p.lat);
+    maxLat = Math.max(maxLat, p.lat);
+    minLng = Math.min(minLng, p.lng);
+    maxLng = Math.max(maxLng, p.lng);
+  }
   return {
-    x: 50 + ((p.lng - center.lng) / HALF_LNG) * 50,
-    y: 50 - ((p.lat - center.lat) / HALF_LAT) * 50,
+    lat: (minLat + maxLat) / 2,
+    lng: (minLng + maxLng) / 2,
+    halfLat: clampN(((maxLat - minLat) / 2) * PAD, MIN_HALF_LAT, MAX_HALF_LAT),
+    halfLng: clampN(((maxLng - minLng) / 2) * PAD, MIN_HALF_LNG, MAX_HALF_LNG),
   };
+}
+
+/** 뷰포트 → 사용 영역([X_MIN,X_MAX]×[Y_MIN,Y_MAX]) %로 투영 (북쪽이 위) */
+export function project(vp: Viewport, p: LngLat): { x: number; y: number } {
+  return {
+    x: X_MIN + ((p.lng - (vp.lng - vp.halfLng)) / (2 * vp.halfLng)) * (X_MAX - X_MIN),
+    y: Y_MAX - ((p.lat - (vp.lat - vp.halfLat)) / (2 * vp.halfLat)) * (Y_MAX - Y_MIN),
+  };
+}
+
+/** 공원 블롭 지름(패널 가로 %) — 뷰포트 줌에 맞춰 커지고 작아짐 */
+export function parkDiameterPct(vp: Viewport, r: number): number {
+  return (r * (X_MAX - X_MIN)) / vp.halfLng;
 }
 
 /* ── 서울·수도권 ───────────────────────────────────────────── */
