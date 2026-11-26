@@ -1314,6 +1314,7 @@ body { background: var(--cream); color: var(--ink); }
   user-select: none;
   -webkit-user-drag: none;
 }
+.toy-still { image-rendering: auto; }
 
 /* ===== 결과지: 페르소나 카드 ===== */
 .persona {

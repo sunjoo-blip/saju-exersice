@@ -1,10 +1,10 @@
 /**
- * 운동팔자 캐릭터 — 3D 토이 스타일 동물 10종 × 1위 운동 장면 50개.
+ * 운동팔자 캐릭터 — 3D 토이 스타일 동물 10종 × 운동 16종 장면 160개.
  * 이미지: public/characters/<동물>/<운동>.webp (12프레임 반복) · .png (공유 카드용 정지 컷)
  * - name: 캐릭터 (기린·고양이·사자·여우·곰·다람쥐·토끼·학·돌고래·거북이)
  * - exercise: 운동. 없거나 그 동물의 장면이 없으면 기본 포즈(idle).
  *   → 잠금 상태에서는 exercise 를 넘기지 않아 1위 운동이 그림으로 새지 않게 함.
- * - animated=false: 정지 PNG (html-to-image 공유 카드 캡처용)
+ * - animated=false: 고해상도 정지 PNG 640px (공유 카드 캡처·도감용, 픽셀 확대 없이 부드럽게)
  */
 
 import type { Exercise } from "@/lib/exercise/catalog";
@@ -41,25 +41,11 @@ export const EXERCISE_SLUG: Record<Exercise, string> = {
   발레: "ballet",
 };
 
-/** 동물별로 그려 둔 운동 장면 (60일주 1위 운동 조합) */
-const SCENES: Record<string, string[]> = {
-  giraffe: ["climbing", "crossfit", "f45", "gym", "hyrox"],
-  cat: ["aerial", "barre", "bungee", "climbing", "pilates", "yoga"],
-  lion: ["boxing", "bungee", "group", "spinning"],
-  fox: ["pilates", "snpe", "spinning", "yoga"],
-  bear: ["boxing", "climbing", "crossfit", "f45", "gym", "hyrox"],
-  squirrel: ["climbing", "group", "gym", "pilates", "snpe", "yoga"],
-  rabbit: ["boxing", "crossfit", "f45", "gym", "hyrox"],
-  crane: ["ballet", "barre", "bungee", "singingbowl"],
-  dolphin: ["aerial", "boxing", "group", "hyrox", "spinning"],
-  turtle: ["barre", "pilates", "singingbowl", "spinning", "yoga"],
-};
-
 /** 이 동물이 이 운동을 하는 장면이 있는지 */
 export function hasScene(name: string, exercise?: string): boolean {
   const key = ANIMAL_KEY[name];
   const slug = exercise ? EXERCISE_SLUG[exercise as Exercise] : undefined;
-  return !!key && !!slug && SCENES[key].includes(slug);
+  return !!key && !!slug;
 }
 
 /** 이미지 경로. 장면이 없으면 기본 포즈. */
@@ -89,7 +75,7 @@ export default function Character({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      className={`toy-char${className ? ` ${className}` : ""}`}
+      className={`toy-char${animated ? "" : " toy-still"}${className ? ` ${className}` : ""}`}
       src={src}
       alt={label}
       width={size}
