@@ -9,8 +9,8 @@ import { EXERCISE_EMOJI, OHAENG_FILL_HINT } from "@/lib/exercise/catalog";
 import { fillTargets } from "@/lib/exercise/pick";
 import OhaengBars from "./OhaengBars";
 import PlaceCTA from "./PlaceCTA";
-import Character from "./Character";
-import { iljuNumber } from "@/lib/saju/iljuTypes";
+import Character, { hasScene } from "./Character";
+import { exerciseRarity, iljuNumber } from "@/lib/saju/iljuTypes";
 
 /** 공유 링크 — 환경변수가 없으면 현재 접속 도메인 사용 (localhost 링크가 공유되던 문제 방지) */
 function siteUrl(): string {
@@ -227,12 +227,9 @@ export default function ResultView({
           )
         )}
         {rec?.character && (
-          <div className="persona-art">
-            <Character
-              name={rec.character}
-              exercise={locked ? undefined : recos[0]?.name}
-              size={280}
-            />
+          <div className="persona-art pedestal">
+            {/* 인트로는 기본 포즈 — 1위 운동 장면은 TOP3 의 1위 카드에서 공개 */}
+            <Character name={rec.character} size={240} />
             {locked && (
               <button
                 type="button"
@@ -279,20 +276,43 @@ export default function ResultView({
           <div className="gate-wrap">
             {countdown.map((r) => {
               const hidden = locked && r.rank !== 3;
+              const scene = !hidden && rec.character && hasScene(rec.character, r.name);
+              if (r.rank === 1 && !hidden) {
+                return (
+                  <div className="reco reco-top reco-r1" key={r.name}>
+                    <span className="reco-pill">1위</span>
+                    {scene ? (
+                      <Character name={rec.character!} exercise={r.name} size={260} className="reco-hero" />
+                    ) : (
+                      <div className="reco-emoji-hero" aria-hidden>{EXERCISE_EMOJI[r.name]}</div>
+                    )}
+                    <div className="reco-name">{r.name}</div>
+                    <div className="reco-reason">{r.reason}</div>
+                    <div className="reco-rarity">60일주 중 {exerciseRarity(r.name)}%만 받는 1위</div>
+                  </div>
+                );
+              }
               return (
                 <div
-                  className={`reco${r.rank === 1 && !hidden ? " reco-top" : ""}${hidden ? " reco-locked" : ""}`}
+                  className={`reco reco-r${r.rank}${hidden ? " reco-locked" : ""}`}
                   key={r.name}
                 >
-                  <div className="reco-rank">{r.rank}</div>
+                  <div className="reco-thumb" aria-hidden>
+                    {hidden ? (
+                      "🔒"
+                    ) : scene ? (
+                      <Character name={rec.character!} exercise={r.name} size={84} />
+                    ) : (
+                      EXERCISE_EMOJI[r.name]
+                    )}
+                  </div>
                   <div
-                    style={{ flex: 1 }}
+                    style={{ flex: 1, minWidth: 0 }}
                     className={hidden ? "locked-blur" : undefined}
                     aria-hidden={hidden || undefined}
                   >
-                    <div className="reco-name">
-                      {hidden ? "???" : `${EXERCISE_EMOJI[r.name]} ${r.name}`}
-                    </div>
+                    <div className="reco-rank">{r.rank}위</div>
+                    <div className="reco-name">{hidden ? "???" : r.name}</div>
                     <div className="reco-reason">
                       {hidden ? "로그인하면 공개되는 추천 이유예요." : r.reason}
                     </div>
@@ -315,8 +335,8 @@ export default function ResultView({
         ) : (
           !recError &&
           [3, 2, 1].map((n) => (
-            <div className="reco" key={n}>
-              <div className="reco-rank">{n}</div>
+            <div className={`reco reco-r${n}`} key={n}>
+              <div className="reco-thumb" aria-hidden />
               <div style={{ flex: 1 }}>
                 <Skeleton lines={2} />
               </div>
@@ -423,7 +443,7 @@ export default function ResultView({
               </>
             )}
             {rec?.character && (
-              <div className="persona-art">
+              <div className="persona-art pedestal">
                 <Character
                   name={rec.character}
                   exercise={recos[0]?.name}

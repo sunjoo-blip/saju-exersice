@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { sajuInputSchema } from "@/lib/saju/validate";
 import type { SajuInput } from "@/lib/saju/types";
+import Brand from "./Brand";
+import Character from "./Character";
 
 interface Props {
   onSubmit: (input: SajuInput) => void;
@@ -82,9 +84,12 @@ export default function InputForm({ onSubmit, onBack, blockedMessage }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <p className="eyebrow">STEP 01</p>
-      <h1 className="display">너의 사주를 알려줘</h1>
+    <form onSubmit={handleSubmit} className="input-form">
+      <Brand right={<span className="pill">STEP 1 / 1</span>} />
+      <div className="form-hero">
+        <Character name="다람쥐" size={120} />
+        <h1 className="display">너의 사주를 알려줘</h1>
+      </div>
       <p className="sub">
         태어난 날짜와 시간으로 운동 팔자를 봐 드릴게요.
         <br />
@@ -106,22 +111,22 @@ export default function InputForm({ onSubmit, onBack, blockedMessage }: Props) {
         <div className="field">
           <label>양력 / 음력</label>
           <div className="segmented">
-            <div
+            <button
+              type="button"
               className={`seg ${calendar === "solar" ? "active" : ""}`}
               onClick={() => setCalendar("solar")}
-              role="button"
-              tabIndex={0}
+              aria-pressed={calendar === "solar"}
             >
               양력
-            </div>
-            <div
+            </button>
+            <button
+              type="button"
               className={`seg ${calendar === "lunar" ? "active" : ""}`}
               onClick={() => setCalendar("lunar")}
-              role="button"
-              tabIndex={0}
+              aria-pressed={calendar === "lunar"}
             >
               음력
-            </div>
+            </button>
           </div>
           {calendar === "lunar" && (
             <label className="checkbox" style={{ marginTop: 10 }}>

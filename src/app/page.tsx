@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import InputForm from "@/components/InputForm";
 import ResultView from "@/components/ResultView";
+import Character from "@/components/Character";
+import Brand from "@/components/Brand";
 import type { SajuInput } from "@/lib/saju/types";
 import type { Recommendation } from "@/lib/ai/schema";
 import type { AnalyzeResponse, SajuResponse, SajuSuccess } from "@/lib/types";
@@ -164,51 +166,74 @@ function Landing({
   }
 
   return (
-    <div className="center" style={{ paddingTop: 48 }}>
-      <p className="eyebrow">명리학 x 운동</p>
-      <h1 className="display">
-        내 사주에 맞는
-        <br />
-        운동이 따로 있다고?
-      </h1>
-      <p className="sub">태어난 날짜와 시간으로 알아보는 나의 운동 팔자</p>
+    <div className="landing">
+      <Brand right={<span className="pill">무료 · 1분</span>} />
 
-      <div style={{ margin: "48px 0 32px", fontSize: 64 }} className="serif">
-        ☯
+      <div className="landing-hero">
+        <h1 className="display">
+          내 사주 속 동물이
+          <br />
+          운동을 골라줄게
+        </h1>
+        <p className="sub">60가지 일주 동물 중 나는 누구?</p>
       </div>
 
-      <div className="field" style={{ maxWidth: 280, margin: "0 auto 12px" }}>
-        <input
-          className="input"
-          placeholder="접속 코드를 입력하세요"
-          value={code}
-          onChange={(e) => {
-            onCodeChange(e.target.value);
-            if (codeError) setCodeError(null);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleEnter();
-          }}
-          autoComplete="off"
-          style={{ textAlign: "center" }}
-        />
-        {codeError && (
-          <p className="error-text" style={{ marginTop: 8 }}>
-            {codeError}
-          </p>
-        )}
+      <div className="stage" aria-hidden>
+        <span className="stage-bubble">나랑 같이 운동할래?</span>
+        <div className="stage-hill" />
+        <Character name="여우" size={150} className="stage-side stage-left" />
+        <Character name="토끼" size={150} className="stage-side stage-right" />
+        <Character name="사자" size={220} className="stage-main" />
       </div>
 
-      <button
-        className="btn btn-primary"
-        onClick={handleEnter}
-        disabled={code.trim().length === 0 || verifying}
-      >
-        {verifying ? "확인 중…" : "내 운동 팔자 확인하기"}
-      </button>
+      <div className="card landing-card">
+        <div className="field" style={{ marginTop: 0 }}>
+          <label htmlFor="access-code">접속 코드</label>
+          <input
+            id="access-code"
+            className="input"
+            placeholder="초대받은 코드를 입력하세요"
+            value={code}
+            onChange={(e) => {
+              onCodeChange(e.target.value);
+              if (codeError) setCodeError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleEnter();
+            }}
+            autoComplete="off"
+          />
+          {codeError && (
+            <p className="error-text" style={{ marginTop: 8 }}>
+              {codeError}
+            </p>
+          )}
+        </div>
+        <button
+          className="btn btn-primary"
+          onClick={handleEnter}
+          disabled={code.trim().length === 0 || verifying}
+        >
+          {verifying ? "확인 중…" : "내 운동 동물 만나기"}
+        </button>
+      </div>
+
+      <section className="roster">
+        <h2 className="roster-title">이 친구들 중 하나가 나와요</h2>
+        <ul className="roster-grid">
+          {ROSTER.map((name, i) => (
+            <li key={name}>
+              <span className={`roster-tile tone-${i % 4}`}>
+                <Character name={name} size={74} animated={false} />
+              </span>
+              {name}
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <p className="disclaimer">
-        초대받은 분만 접속 코드로 이용할 수 있어요.
+        초대받은 분만 접속 코드로 이용할 수 있어요. 생년월일은 결과 계산에만 쓰고 저장하지 않아요.
         <br />
         명리학 기반 엔터테인먼트 콘텐츠이며 과학적 진단이 아닙니다.
       </p>
@@ -216,14 +241,14 @@ function Landing({
   );
 }
 
+const ROSTER = ["사자", "여우", "곰", "토끼", "고양이", "다람쥐", "기린", "학", "돌고래", "거북이"];
+
 function Loading() {
   return (
     <div className="loading">
-      <div className="spinner" />
-      <p className="serif" style={{ fontSize: 20 }}>
-        사주를 풀어보는 중…
-      </p>
-      <p className="muted">오행과 신살을 살펴 운동 팔자를 짓고 있어요.</p>
+      <Character name="거북이" size={180} />
+      <p className="loading-title">사주를 풀어보는 중…</p>
+      <p className="muted">오행과 신살을 살펴 내 운동 동물을 찾고 있어요.</p>
     </div>
   );
 }

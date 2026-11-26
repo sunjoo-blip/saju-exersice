@@ -93,3 +93,10 @@ export function iljuType(gan: string, jiji: string): IljuType | undefined {
 export function iljuNumber(ilju: string): number {
   return Object.keys(ILJU_TYPES).indexOf(ilju) + 1;
 }
+
+/** 60일주 중 이 운동을 1위로 받는 비율(%) — 결과지 "희귀도" 표기용. 예: 복싱 5/60 → 8.3 */
+export function exerciseRarity(exercise: string): number {
+  const all = Object.values(ILJU_TYPES);
+  const n = all.filter((t) => t.exercise === exercise).length;
+  return Math.round((n / all.length) * 1000) / 10;
+}
