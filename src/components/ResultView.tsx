@@ -322,9 +322,9 @@ export default function ResultView({
             })}
             {locked && (
               <div className="gate-card" id="gate">
-                <p className="gate-title">진짜 찰떡은 아직이야.</p>
+                <p className="gate-title">더 보고 싶다면?</p>
                 <p className="gate-sub">
-                  2위·1위, 운동 성향, 꾸준히 하는 팁, 부족한 기운, 맞춤 스튜디오까지 전부 열려요.
+                  카카오 로그인 시 2위·1위, 운동 성향, 꾸준히 하는 팁, 부족한 기운, 맞춤 스튜디오까지 전부 열려요.
                 </p>
                 <button type="button" className="btn btn-kakao" onClick={unlock}>
                   카카오로 3초 만에 1위 보기
