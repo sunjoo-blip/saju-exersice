@@ -3,17 +3,24 @@
  * (오붓 v4 지도 검색은 bounds 또는 regionIds 가 필요)
  */
 
-export type Area = { id: string; label: string; lat: number; lng: number };
+export type Area = {
+  id: string;
+  label: string;
+  lat: number;
+  lng: number;
+  /** 이 프리셋이 포함하는 구(區) — DISTRICT_OHAENG 키와 맞춤("중구"만 "중"). 보완 오행 지역 필터에 사용 */
+  districts: string[];
+};
 
 export const AREAS: Area[] = [
-  { id: "gangnam", label: "강남·서초", lat: 37.4979, lng: 127.0276 },
-  { id: "seongsu", label: "성수·건대", lat: 37.5446, lng: 127.0557 },
-  { id: "jamsil", label: "잠실·송파", lat: 37.5133, lng: 127.1002 },
-  { id: "mapo", label: "홍대·마포", lat: 37.5563, lng: 126.9236 },
-  { id: "yeouido", label: "여의도·영등포", lat: 37.5219, lng: 126.9245 },
-  { id: "jongno", label: "광화문·종로", lat: 37.5704, lng: 126.9769 },
-  { id: "yongsan", label: "용산·이태원", lat: 37.5345, lng: 126.9946 },
-  { id: "pangyo", label: "판교·분당", lat: 37.3947, lng: 127.1112 },
+  { id: "gangnam", label: "강남·서초", lat: 37.4979, lng: 127.0276, districts: ["강남", "서초"] },
+  { id: "seongsu", label: "성수·건대", lat: 37.5446, lng: 127.0557, districts: ["성동", "광진"] },
+  { id: "jamsil", label: "잠실·송파", lat: 37.5133, lng: 127.1002, districts: ["송파"] },
+  { id: "mapo", label: "홍대·마포", lat: 37.5563, lng: 126.9236, districts: ["마포"] },
+  { id: "yeouido", label: "여의도·영등포", lat: 37.5219, lng: 126.9245, districts: ["영등포"] },
+  { id: "jongno", label: "광화문·종로", lat: 37.5704, lng: 126.9769, districts: ["종로", "중"] },
+  { id: "yongsan", label: "용산·이태원", lat: 37.5345, lng: 126.9946, districts: ["용산"] },
+  { id: "pangyo", label: "판교·분당", lat: 37.3947, lng: 127.1112, districts: [] },
 ];
 
 /** 중심 좌표 기준 약 4~5km 박스 */

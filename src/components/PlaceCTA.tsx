@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   EXERCISE_EMOJI,
   OBUD_CATEGORY_ID,
@@ -11,7 +11,7 @@ import { AREAS, obudPlaceUrl, type Studio } from "@/lib/studios/areas";
 import type { Ohaeng } from "@/lib/saju/constants";
 import StudioMap, { NAVER_MAP_ENABLED } from "./StudioMap";
 import SchematicMap from "./SchematicMap";
-import { districtsOf } from "@/lib/studios/ohaengPlaces";
+import { areaOhaeng, districtsOf } from "@/lib/studios/ohaengPlaces";
 
 const OHAENG_LABEL: Record<Ohaeng, string> = { 목: "木", 화: "火", 토: "土", 금: "金", 수: "水" };
 
@@ -33,8 +33,18 @@ export default function PlaceCTA({
   /** 부족한 오행 — 수·목이면 한강·공원 근처 스튜디오를 먼저 추천 */
   fill?: Ohaeng[];
 }) {
+  // 보완 오행과 맞는 지역만 노출 (수 → 한강·호수·영등포·마포 쪽). 겹치는 게 없으면 전체 노출.
+  const areas = useMemo(() => {
+    if (fill.length === 0) return AREAS;
+    const matched = AREAS.filter((a) =>
+      areaOhaeng(a.lat, a.lng, a.districts).some((o) => fill.includes(o)),
+    );
+    return matched.length > 0 ? matched : AREAS;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fill.join(",")]);
+
   const [selected, setSelected] = useState(recommendations[0]?.name);
-  const [loc, setLoc] = useState<Loc>(AREAS[0]);
+  const [loc, setLoc] = useState<Loc>(() => areas[0]);
   const [studios, setStudios] = useState<Studio[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
@@ -136,7 +146,7 @@ export default function PlaceCTA({
           >
             📍 내 위치
           </button>
-          {AREAS.map((a) => (
+          {areas.map((a) => (
             <button
               key={a.id}
               type="button"

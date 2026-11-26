@@ -190,6 +190,21 @@ export function matchOhaengPlace(
   return found.sort((a, b) => a.meters - b.meters)[0];
 }
 
+/**
+ * 지역 프리셋이 "채워줄 수 있는" 오행 집합.
+ * = 포함 구들의 오행(DISTRICT_OHAENG) + 한강·호수 근처면 수(水) + 공원·숲 근처면 목(木).
+ * (스튜디오 점수 로직 scoreStudio 와 같은 기준 — 지역 칩 필터에 씁니다.)
+ */
+export function areaOhaeng(lat: number, lng: number, districts: string[]): Ohaeng[] {
+  const set = new Set<Ohaeng>();
+  for (const d of districts) {
+    for (const o of DISTRICT_OHAENG[d] ?? []) set.add(o);
+  }
+  if (matchOhaengPlace(lat, lng, ["수"])) set.add("수");
+  if (matchOhaengPlace(lat, lng, ["목"])) set.add("목");
+  return [...set];
+}
+
 const OHAENG_WORD: Record<Ohaeng, string> = { 목: "나무", 화: "불", 토: "흙", 금: "쇠", 수: "물" };
 
 /**
