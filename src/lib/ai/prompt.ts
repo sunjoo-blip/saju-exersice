@@ -68,7 +68,7 @@ export function serializeFacts(saju: SajuResult): string {
     `- 개수: ${ohaengLine}`,
     `- 가장 강한 오행: ${describeOhaeng(saju.ohaeng.dominant)}`,
     `- 없는 오행: ${saju.ohaeng.missing.length ? saju.ohaeng.missing.join(", ") : "없음"}`,
-    `- 채워야 할 오행(보완 대상): ${fillTargets(saju)
+    `- 보완 오행(가장 강한 오행을 상생으로 흘려보낼 기운): ${fillTargets(saju)
       .map((o) => `${describeOhaeng(o)} → ${OHAENG_FILL_HINT[o]} 운동`)
       .join(" / ")}`,
     "",

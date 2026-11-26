@@ -93,3 +93,16 @@ export const OHAENG_META: Record<Ohaeng, { hanja: string; hint: string }> = {
 };
 
 export const ALL_OHAENG: Ohaeng[] = ["목", "화", "토", "금", "수"];
+
+/**
+ * 오행 상생(相生) — 이 오행이 "생(生)"하는 다음 오행.
+ * 목생화 · 화생토 · 토생금 · 금생수 · 수생목.
+ * 가장 강한 오행의 기운을 흘려보낼 보완 오행을 고르는 데 씁니다. (예: 금 과다 → 수)
+ */
+export const OHAENG_SAENG: Record<Ohaeng, Ohaeng> = {
+  목: "화",
+  화: "토",
+  토: "금",
+  금: "수",
+  수: "목",
+};

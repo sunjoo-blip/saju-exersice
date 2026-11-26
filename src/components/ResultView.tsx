@@ -4,8 +4,9 @@ import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import type { Recommendation } from "@/lib/ai/schema";
 import type { SajuSuccess } from "@/lib/types";
-import { ALL_OHAENG, OHAENG_META, type Ohaeng } from "@/lib/saju/constants";
+import { OHAENG_META, type Ohaeng } from "@/lib/saju/constants";
 import { EXERCISE_EMOJI, OHAENG_FILL_HINT } from "@/lib/exercise/catalog";
+import { fillTargetFor } from "@/lib/exercise/pick";
 import OhaengBars from "./OhaengBars";
 import PlaceCTA from "./PlaceCTA";
 import Character from "./Character";
@@ -76,13 +77,6 @@ function Skeleton({ lines = 3 }: { lines?: number }) {
   );
 }
 
-/** 보완해야 할 오행 (없는 오행 → 없으면 가장 약한 오행) — lib/exercise/pick.ts 와 같은 규칙 */
-function fillTargets(counts: Record<Ohaeng, number>, missing: Ohaeng[]): Ohaeng[] {
-  if (missing.length > 0) return missing;
-  const min = Math.min(...ALL_OHAENG.map((o) => counts[o]));
-  return ALL_OHAENG.filter((o) => counts[o] === min);
-}
-
 export default function ResultView({
   base,
   rec,
@@ -99,8 +93,9 @@ export default function ResultView({
   const [sharing, setSharing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
-  const targets = fillTargets(saju.ohaeng.counts, saju.ohaeng.missing);
-  const isMissing = saju.ohaeng.missing.length > 0;
+  const dominant = saju.ohaeng.dominant;
+  const fill = fillTargetFor(dominant); // 가장 강한 오행의 상생 1개 (예: 금 → 수)
+  const targets = [fill];
 
   async function renderCard(): Promise<string> {
     return toPng(cardRef.current!, { pixelRatio: 2, cacheBust: true });
@@ -357,22 +352,23 @@ export default function ResultView({
         )}
       </section>
 
-      {/* ===== 5. 내게 부족한 기운 (오행) ===== */}
+      {/* ===== 5. 채우면 좋은 기운 (오행) ===== */}
       <section className="sec">
-        <SecHead num="04" label="내게 부족한 기운" locked={locked} />
-        <Locked locked={locked} placeholder="내 사주에 비어 있는 기운과, 그걸 채우는 운동이에요.">
+        <SecHead num="04" label="채우면 좋은 기운" locked={locked} />
+        <Locked locked={locked} placeholder="내 사주에서 가장 센 기운과, 그걸 풀어줄 운동이에요.">
           <div className="card" style={{ margin: 0 }}>
             <p style={{ marginTop: 0 }}>
-              {targets.map((o) => `${o}(${OHAENG_META[o].hanja})`).join(" · ")} 기운이{" "}
-              {isMissing ? "비어 있어요" : "가장 약해요"}.
+              {dominant}({OHAENG_META[dominant].hanja}) 기운이 가장 강해요.{" "}
+              <strong>
+                {fill}({OHAENG_META[fill].hanja})
+              </strong>{" "}
+              기운을 채워 흘려보내면 균형이 잡혀요.
             </p>
             <OhaengBars counts={saju.ohaeng.counts} total={saju.ohaeng.total} />
             <ul style={{ margin: "12px 0 0", paddingLeft: 18 }} className="muted">
-              {targets.map((o) => (
-                <li key={o} style={{ marginBottom: 4 }}>
-                  {o}: {OHAENG_FILL_HINT[o]} 운동으로 채워보세요
-                </li>
-              ))}
+              <li style={{ marginBottom: 4 }}>
+                {fill}: {OHAENG_FILL_HINT[fill]} 운동으로 채워보세요
+              </li>
             </ul>
           </div>
         </Locked>

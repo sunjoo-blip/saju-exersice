@@ -157,7 +157,7 @@ export default function PlaceCTA({
 
       {fill.length > 0 && (
         <p className="muted" style={{ fontSize: 13, margin: "0 0 10px" }}>
-          {fill.map((o) => `${o}(${OHAENG_LABEL[o]})`).join(" · ")} 기운이 부족해서{" "}
+          {fill.map((o) => `${o}(${OHAENG_LABEL[o]})`).join(" · ")} 기운을 채우려고{" "}
           {fill
             .map((o) => districtsOf(o).slice(0, 4).join("·"))
             .join(" / ")}
