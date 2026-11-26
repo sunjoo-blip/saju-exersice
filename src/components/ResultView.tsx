@@ -6,7 +6,7 @@ import type { Recommendation } from "@/lib/ai/schema";
 import type { SajuSuccess } from "@/lib/types";
 import { OHAENG_META, type Ohaeng } from "@/lib/saju/constants";
 import { EXERCISE_EMOJI, OHAENG_FILL_HINT } from "@/lib/exercise/catalog";
-import { fillTargetFor } from "@/lib/exercise/pick";
+import { fillTargets } from "@/lib/exercise/pick";
 import OhaengBars from "./OhaengBars";
 import PlaceCTA from "./PlaceCTA";
 import Character from "./Character";
@@ -94,8 +94,9 @@ export default function ResultView({
   const [copied, setCopied] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const dominant = saju.ohaeng.dominant;
-  const fill = fillTargetFor(dominant); // 가장 강한 오행의 상생 1개 (예: 금 → 수)
-  const targets = [fill];
+  const isMissing = saju.ohaeng.missing.length > 0;
+  // 비어 있는 오행이 있으면 그걸 전부, 골고루면 가장 강한 오행의 상생 1개 (예: 금 → 수)
+  const targets = fillTargets(saju.ohaeng);
 
   async function renderCard(): Promise<string> {
     return toPng(cardRef.current!, { pixelRatio: 2, cacheBust: true });
@@ -355,20 +356,31 @@ export default function ResultView({
       {/* ===== 5. 채우면 좋은 기운 (오행) ===== */}
       <section className="sec">
         <SecHead num="04" label="채우면 좋은 기운" locked={locked} />
-        <Locked locked={locked} placeholder="내 사주에서 가장 센 기운과, 그걸 풀어줄 운동이에요.">
+        <Locked locked={locked} placeholder="내 사주에 채우면 좋은 기운과, 그걸 채우는 운동이에요.">
           <div className="card" style={{ margin: 0 }}>
             <p style={{ marginTop: 0 }}>
-              {dominant}({OHAENG_META[dominant].hanja}) 기운이 가장 강해요.{" "}
-              <strong>
-                {fill}({OHAENG_META[fill].hanja})
-              </strong>{" "}
-              기운을 채워 흘려보내면 균형이 잡혀요.
+              {isMissing ? (
+                <>
+                  {targets.map((o) => `${o}(${OHAENG_META[o].hanja})`).join(" · ")} 기운이
+                  비어 있어요.
+                </>
+              ) : (
+                <>
+                  {dominant}({OHAENG_META[dominant].hanja}) 기운이 가장 강해요.{" "}
+                  <strong>
+                    {targets[0]}({OHAENG_META[targets[0]].hanja})
+                  </strong>{" "}
+                  기운을 채워 흘려보내면 균형이 잡혀요.
+                </>
+              )}
             </p>
             <OhaengBars counts={saju.ohaeng.counts} total={saju.ohaeng.total} />
             <ul style={{ margin: "12px 0 0", paddingLeft: 18 }} className="muted">
-              <li style={{ marginBottom: 4 }}>
-                {fill}: {OHAENG_FILL_HINT[fill]} 운동으로 채워보세요
-              </li>
+              {targets.map((o) => (
+                <li key={o} style={{ marginBottom: 4 }}>
+                  {o}: {OHAENG_FILL_HINT[o]} 운동으로 채워보세요
+                </li>
+              ))}
             </ul>
           </div>
         </Locked>

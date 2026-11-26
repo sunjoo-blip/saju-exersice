@@ -6,18 +6,15 @@
  */
 
 import { OHAENG_SAENG, type Ohaeng } from "../saju/constants";
-import type { SajuResult } from "../saju/types";
+import type { OhaengDistribution } from "../saju/types";
 
 /**
- * 보완해야 할 오행 — 가장 강한 오행(dominant)의 기운을 상생(相生)으로
- * 흘려보낼 다음 오행 하나. 예) 금(金)이 가장 강하면 금생수 → 수(水) 보완.
- * (오행이 골고루라 약한 오행이 여러 개여도 항상 1개만 반환합니다.)
+ * 보완해야 할 오행.
+ * - 비어 있는(0개) 오행이 있으면 무조건 그걸 전부 먼저 채웁니다.
+ * - 오행이 골고루 다 있으면, 가장 강한 오행(dominant)의 기운을 상생(相生)으로
+ *   흘려보낼 다음 오행 하나. 예) 금(金)이 가장 강하면 금생수 → 수(水) 보완.
  */
-export function fillTargetFor(dominant: Ohaeng): Ohaeng {
-  return OHAENG_SAENG[dominant];
-}
-
-/** 보완해야 할 오행 (항상 1개). 소비처 호환을 위해 배열로 반환합니다. */
-export function fillTargets(saju: SajuResult): Ohaeng[] {
-  return [fillTargetFor(saju.ohaeng.dominant)];
+export function fillTargets(ohaeng: OhaengDistribution): Ohaeng[] {
+  if (ohaeng.missing.length > 0) return ohaeng.missing;
+  return [OHAENG_SAENG[ohaeng.dominant]];
 }
