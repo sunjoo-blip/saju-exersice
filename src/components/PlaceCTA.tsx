@@ -7,7 +7,14 @@ import {
   obudDiscoverUrl,
 } from "@/lib/exercise/catalog";
 import type { Recommendation } from "@/lib/ai/schema";
-import { AREAS, obudPlaceUrl, type Studio } from "@/lib/studios/areas";
+import {
+  REGIONS,
+  SEOUL_SUBS,
+  obudPlaceUrl,
+  type Region,
+  type SubArea,
+  type Studio,
+} from "@/lib/studios/areas";
 import type { Ohaeng } from "@/lib/saju/constants";
 import StudioMap, { NAVER_MAP_ENABLED } from "./StudioMap";
 import SchematicMap from "./SchematicMap";
@@ -18,6 +25,11 @@ const OHAENG_LABEL: Record<Ohaeng, string> = { 목: "木", 화: "火", 토: "土
 const OBUD_URL = process.env.NEXT_PUBLIC_OBUD_URL || "https://www.obud.co";
 
 type Loc = { id: string; label: string; lat: number; lng: number };
+
+/** 하위 지역(SubArea) → 검색/지도에 쓰는 Loc. "서울 전체"는 라벨을 "서울"로 */
+function subToLoc(s: SubArea): Loc {
+  return { id: s.id, label: s.label === "서울 전체" ? "서울" : s.label, lat: s.lat, lng: s.lng };
+}
 
 /**
  * 오붓 맞춤 스튜디오 (명세 F7).
@@ -33,21 +45,29 @@ export default function PlaceCTA({
   /** 부족한 오행 — 수·목이면 한강·공원 근처 스튜디오를 먼저 추천 */
   fill?: Ohaeng[];
 }) {
-  // 서울은 보완 오행이 맞는 곳만(수 → 한강·호수·영등포·마포 쪽), 서울 밖(경기·부산·대구·제주)은 항상 노출.
-  const areas = useMemo(() => {
-    const seoulAll = fill.length === 0; // 보완 오행이 없으면 서울도 전부
-    const matched = AREAS.filter(
-      (a) =>
-        a.alwaysShow ||
-        seoulAll ||
-        areaOhaeng(a.lat, a.lng, a.districts).some((o) => fill.includes(o)),
-    );
-    return matched.length > 0 ? matched : AREAS;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fill.join(",")]);
-
   const [selected, setSelected] = useState(recommendations[0]?.name);
-  const [loc, setLoc] = useState<Loc>(() => areas[0]);
+  // 지역: 시/도(REGIONS) 한 줄 → 서울만 하위 구 칩. 비서울은 대표 좌표로 바로 검색.
+  const [regionId, setRegionId] = useState("seoul");
+  const [loc, setLoc] = useState<Loc>(() => subToLoc(SEOUL_SUBS[0])); // 서울 전체
+
+  // 선택한 시/도의 하위 지역 — 보완 오행 맞는 구를 앞으로 정렬 + ✨ 강조 (서울만 해당)
+  const subRow = useMemo(() => {
+    const r = REGIONS.find((x) => x.id === regionId);
+    if (!r?.subs) return null;
+    const isReco = (s: SubArea) =>
+      s.districts.length > 0 &&
+      areaOhaeng(s.lat, s.lng, s.districts).some((o) => fill.includes(o));
+    const all = r.subs.filter((s) => s.districts.length === 0); // 서울 전체
+    const reco = r.subs.filter(isReco);
+    const rest = r.subs.filter((s) => s.districts.length > 0 && !isReco(s));
+    return { list: [...all, ...reco, ...rest], recoIds: new Set(reco.map((s) => s.id)) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regionId, fill.join(",")]);
+
+  function pickRegion(r: Region) {
+    setRegionId(r.id);
+    setLoc(r.subs ? subToLoc(r.subs[0]) : { id: r.id, label: r.label, lat: r.lat, lng: r.lng });
+  }
   const [studios, setStudios] = useState<Studio[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
@@ -140,6 +160,7 @@ export default function PlaceCTA({
 
       <div className="field">
         <label>지역</label>
+        {/* 1단계: 📍 내 위치 + 시/도 */}
         <div className="chips">
           <button
             type="button"
@@ -149,18 +170,46 @@ export default function PlaceCTA({
           >
             📍 내 위치
           </button>
-          {areas.map((a) => (
+          {REGIONS.map((r) => (
             <button
-              key={a.id}
+              key={r.id}
               type="button"
               className="seg"
-              style={chip(loc.id === a.id)}
-              onClick={() => setLoc(a)}
+              style={chip(loc.id !== "me" && regionId === r.id)}
+              onClick={() => pickRegion(r)}
             >
-              {a.label}
+              {r.label}
             </button>
           ))}
         </div>
+        {/* 2단계: 서울 하위 구 (오행 추천 ✨ 먼저) */}
+        {subRow && (
+          <div
+            className="chips"
+            style={{
+              marginTop: 8,
+              padding: 10,
+              border: "1px solid var(--line)",
+              borderRadius: 12,
+            }}
+          >
+            {subRow.list.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className="seg"
+                style={chip(loc.id === s.id)}
+                onClick={() => setLoc(subToLoc(s))}
+              >
+                {subRow.recoIds.has(s.id) ? `✨ ${s.label}` : s.label}
+              </button>
+            ))}
+          </div>
+        )}
+        <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+          ‘내 위치’는 가까운 스튜디오를 찾는 데만 쓰여요. 위치 정보는 저장하거나
+          수집하지 않아요.
+        </p>
         {locError && (
           <p className="muted" style={{ fontSize: 12, marginTop: 6 }}>
             {locError}
@@ -168,7 +217,8 @@ export default function PlaceCTA({
         )}
       </div>
 
-      {fill.length > 0 && (
+      {/* 추천 근거 문구는 서울 구 오행 기준 — 서울을 골랐을 때만 노출 */}
+      {fill.length > 0 && regionId === "seoul" && loc.id !== "me" && (
         <p className="muted" style={{ fontSize: 13, margin: "0 0 10px" }}>
           {fill.map((o) => `${o}(${OHAENG_LABEL[o]})`).join(" · ")} 기운을 채우려고{" "}
           {fill
