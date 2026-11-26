@@ -33,11 +33,14 @@ export default function PlaceCTA({
   /** 부족한 오행 — 수·목이면 한강·공원 근처 스튜디오를 먼저 추천 */
   fill?: Ohaeng[];
 }) {
-  // 보완 오행과 맞는 지역만 노출 (수 → 한강·호수·영등포·마포 쪽). 겹치는 게 없으면 전체 노출.
+  // 서울은 보완 오행이 맞는 곳만(수 → 한강·호수·영등포·마포 쪽), 서울 밖(경기·부산·대구·제주)은 항상 노출.
   const areas = useMemo(() => {
-    if (fill.length === 0) return AREAS;
-    const matched = AREAS.filter((a) =>
-      areaOhaeng(a.lat, a.lng, a.districts).some((o) => fill.includes(o)),
+    const seoulAll = fill.length === 0; // 보완 오행이 없으면 서울도 전부
+    const matched = AREAS.filter(
+      (a) =>
+        a.alwaysShow ||
+        seoulAll ||
+        areaOhaeng(a.lat, a.lng, a.districts).some((o) => fill.includes(o)),
     );
     return matched.length > 0 ? matched : AREAS;
     // eslint-disable-next-line react-hooks/exhaustive-deps
