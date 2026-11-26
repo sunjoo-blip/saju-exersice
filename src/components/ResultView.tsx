@@ -480,10 +480,6 @@ export default function ResultView({
               <button className="link-btn" onClick={copyLink} disabled={!rec}>
                 링크 복사
               </button>
-              <span className="muted">·</span>
-              <button className="link-btn" onClick={shareToX} disabled={!rec}>
-                X에 공유
-              </button>
             </div>
           </div>
 

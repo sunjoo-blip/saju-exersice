@@ -171,7 +171,7 @@ function Landing({
 
       <div className="landing-hero">
         <h1 className="display">
-          내 사주 속 동물이
+          내 사주 속
           <br />
           운동을 골라줄게
         </h1>
